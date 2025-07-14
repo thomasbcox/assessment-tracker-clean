@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create magic link
+    // Create magic link (this will handle rate limiting and token invalidation)
     const token = await createMagicLink(email);
 
     // In a real app, you would send an email here
@@ -35,6 +35,16 @@ export async function POST(request: NextRequest) {
       ...(process.env.NODE_ENV === 'development' && { token }),
     });
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Handle rate limiting specifically
+    if (errorMessage.includes('Too many active tokens')) {
+      return NextResponse.json(
+        { error: 'Too many active login links. Please wait before requesting another one.' },
+        { status: 429 }
+      );
+    }
+    
     logger.authError('login', error as Error, { email: 'unknown' });
     return NextResponse.json(
       { error: 'Internal server error' },

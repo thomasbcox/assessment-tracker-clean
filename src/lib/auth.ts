@@ -1,5 +1,5 @@
 import { db, magicLinks, users } from './db';
-import { eq } from 'drizzle-orm';
+import { eq, and, lt } from 'drizzle-orm';
 import crypto from 'crypto';
 
 export interface AuthUser {
@@ -10,7 +10,24 @@ export interface AuthUser {
   role: string;
 }
 
+// Clean up expired tokens (should be called periodically)
+export async function cleanupExpiredTokens(): Promise<void> {
+  const now = new Date().toISOString();
+  await db
+    .delete(magicLinks)
+    .where(lt(magicLinks.expiresAt, now));
+}
+
 export async function createMagicLink(email: string): Promise<string> {
+  // Clean up expired tokens first
+  await cleanupExpiredTokens();
+
+  // Invalidate all previous unused tokens for this email
+  await db
+    .update(magicLinks)
+    .set({ used: 1 })
+    .where(and(eq(magicLinks.email, email), eq(magicLinks.used, 0)));
+
   const token = crypto.randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
 
@@ -24,6 +41,9 @@ export async function createMagicLink(email: string): Promise<string> {
 }
 
 export async function verifyMagicLink(token: string): Promise<AuthUser | null> {
+  // Clean up expired tokens first
+  await cleanupExpiredTokens();
+
   const link = await db
     .select()
     .from(magicLinks)
