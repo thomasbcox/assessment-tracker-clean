@@ -31,10 +31,45 @@ The Assessment Tracker is a 360-degree performance evaluation system designed to
 - Completed periods cannot be modified
 
 #### **Assessment Types**
-- **Self-Assessment**: User evaluates their own performance
-- **Peer Review**: Colleagues evaluate each other
-- **Manager Evaluation**: Managers evaluate subordinates
-- **360-Degree**: Combined feedback from multiple sources
+The system supports three distinct assessment types, each with specific purposes and question categories:
+
+**1. Manager Self-Assessment**
+- **Purpose**: The manager rates their own behaviors and habits
+- **Categories**: 
+  - **Sage Mind** – Staying calm, curious, and empathetic under pressure
+  - **Relating** – Building trust through asking, listening, including, coaching, and encouraging
+  - **Requiring** – Driving clarity and results through expectations, standards, follow-up, and confronting problems
+
+**2. Team Member Assessment of the Manager**
+- **Purpose**: Team members rate how their manager shows up and leads
+- **Categories**:
+  - **Sageness** – The team remains steady, calm, and thoughtful under pressure
+  - **Trust & Psychological Safety** – People feel safe to speak up and take risks
+  - **Communication & Feedback** – Clear direction, regular updates, and mutual feedback
+  - **Engagement & Motivation** – Visible energy, purpose, and care for growth
+  - **Accountability & Performance** – High standards, follow-through, and fairness
+  - **Team Collaboration & Effectiveness** – Seamless teamwork, clear meetings, and productive relationships
+
+**3. Director's MRI (Team Observation)**
+- **Purpose**: A senior leader observes team behavior to infer manager effectiveness
+- **Categories**:
+  - **Sageness** – The team stays composed and clear-thinking under stress
+  - **Trust & Psychological Safety** – Issues are surfaced openly and treated as learning opportunities
+  - **Communication & Feedback** – Information flows clearly, usefully, and visibly shapes future work
+  - **Engagement & Motivation** – Work is done with care and linked to purpose; the team is eager to learn
+  - **Accountability & Performance** – The team hits deadlines, owns results, and applies consistent standards
+  - **Team Collaboration & Effectiveness** – Smooth handoffs, cross-coverage, and energizing, focused meetings
+
+#### **Assessment Template Versioning**
+- Each assessment type can have multiple versions
+- When creating a new version of an assessment template:
+  1. Duplicate the original assessment template
+  2. Create new questions that are copies of the source assessment's original questions
+  3. New questions point to the new version as their parent
+  4. New questions have new primary keys
+  5. Each version maintains its own unique question set
+- Assessment templates are versioned independently of assessment periods
+- Users can be assigned to specific template versions
 
 #### **Assessment Status Rules**
 - **Pending**: Assessment created but not started
@@ -44,40 +79,45 @@ The Assessment Tracker is a 360-degree performance evaluation system designed to
 
 ### **3. Question & Response Management**
 
-#### **Question Categories**
-- **Leadership**: Vision communication, feedback, integrity
-- **Communication**: Active listening, clarity, adaptability
-- **Teamwork**: Collaboration, environment, knowledge sharing
-- **Technical Skills**: Role-specific competencies
-- **Innovation**: Problem-solving, creativity, improvement
+#### **Question Structure**
+- Every question must be attached to an assessment type
+- Every question must have a category within its assessment type
+- Questions are organized by category within each assessment type
+- Questions maintain order within categories
+- Assessment types can establish their own unique categories
+- Categories are flexible and can be added/modified per assessment type
 
 #### **Scoring System**
-- 1-5 rating scale for all questions
-- 1 = Strongly Disagree / Poor
-- 2 = Disagree / Below Average
-- 3 = Neutral / Average
-- 4 = Agree / Above Average
-- 5 = Strongly Agree / Excellent
+- 1-7 rating scale for all questions and prompts
+- 1 = Strongly Disagree
+- 2 = Disagree
+- 3 = Slightly Disagree 
+- 4 = Neutral
+- 5 = Slightly Agree
+- 6 = Agree
+- 7 = Strongly Agree
 
 #### **Response Validation**
 - All questions must be answered to complete assessment
-- Scores must be between 1-5
+- Scores must be between 1-7
 - Responses cannot be modified after submission
 - Draft responses are saved automatically
 
 ### **4. Manager-Subordinate Relationships**
 
 #### **Relationship Rules**
-- Managers can only evaluate direct subordinates
+- Managers can only be evaluated by their direct subordinates and others whom they invite; each invitee is identified at invitation time whether they are a direct subordinate or have some other relationship to the manager being assessed
 - Subordinates can only have one direct manager per period
 - Manager relationships are period-specific
-- Managers cannot evaluate themselves
+- Managers cannot evaluate themselves using the "team member assessment of their manager"
+- Managers do evaluate themselves using the "self assessment for managers"
 - Peer relationships are bidirectional
+- When a director fills out the "MRI" assessment it's a description of a team's behavior but it's tied to that team's manager; it's in essence an assessment of how well that manager is running that team
 
 #### **Access Control**
-- Managers can view subordinate assessment progress
+- Managers can view subordinate assessment progress in terms of filling out the team assessment or not
 - Managers cannot modify subordinate responses
-- Subordinates cannot view manager evaluations of them
+- Managers cannot view individual evaluations of them (the "team member assessment of their manager") and managers can only see summary data after there are at least 3 responses from 3 different subordinates in that assessment period
 - Admin can view all relationships and assessments
 
 ### **5. Data Management & Privacy**
@@ -86,11 +126,12 @@ The Assessment Tracker is a 360-degree performance evaluation system designed to
 - Assessment data retained for 7 years
 - User accounts can be deactivated but not deleted
 - Assessment periods archived after completion
-- Magic link tokens deleted after use or expiration
+- Magic link tokens deleted after use or expiration after 7 days
 
 #### **Privacy Rules**
-- Users can only view their own assessments
-- Managers can only view their team's data
+- Users can only view their own assessment responses
+- Managers can only view their self-assessments, their team's summary data, and their director's MRI of their team
+- Directors (managers of Managers) can see what their subordinate Managers can see
 - Admins can view all data
 - Personal information protected by role-based access
 
@@ -104,7 +145,7 @@ The Assessment Tracker is a 360-degree performance evaluation system designed to
 - **Process**: 
   1. Validate email format
   2. Check if user exists in database
-  3. Generate unique token with 24-hour expiration
+  3. Generate unique token with 7-day expiration
   4. Send magic link via email (console log in demo)
 - **Output**: Success message or error
 - **Error Handling**: Invalid email, user not found, system errors
@@ -117,7 +158,7 @@ The Assessment Tracker is a 360-degree performance evaluation system designed to
   2. Check token expiration
   3. Mark token as used
   4. Retrieve user data
-  5. Create user session
+  5. Create user session good for 7 days from first login
 - **Output**: User data and session
 - **Error Handling**: Invalid token, expired token, already used
 
@@ -147,12 +188,12 @@ The Assessment Tracker is a 360-degree performance evaluation system designed to
 
 #### **FR-ASSESS-001: Assessment Creation**
 - **Description**: Create new assessment instances for users
-- **Input**: User ID, period ID, assessment type
+- **Input**: User ID, period ID, assessment type, template version
 - **Process**:
   1. Validate user and period
   2. Check for existing assessments
-  3. Create assessment instance
-  4. Assign questions based on type
+  3. Create assessment instance with specified template version
+  4. Assign questions based on assessment type and template version
 - **Output**: Assessment instance with questions
 - **Error Handling**: Invalid user/period, duplicate assessment
 
@@ -183,7 +224,7 @@ The Assessment Tracker is a 360-degree performance evaluation system designed to
 - **Description**: Display questions by category for assessment
 - **Input**: Assessment ID, category filter
 - **Process**:
-  1. Retrieve questions for assessment
+  1. Retrieve questions for assessment type and template version
   2. Group by category
   3. Sort by question order
 - **Output**: Organized question list
@@ -194,10 +235,21 @@ The Assessment Tracker is a 360-degree performance evaluation system designed to
 - **Input**: Question responses
 - **Process**:
   1. Check all questions answered
-  2. Validate score ranges (1-5)
+  2. Validate score ranges (1-7)
   3. Ensure no duplicate responses
 - **Output**: Validation result
 - **Error Handling**: Missing responses, invalid scores
+
+#### **FR-QUEST-003: Template Version Management**
+- **Description**: Create new versions of assessment templates
+- **Input**: Source template ID, new version data
+- **Process**:
+  1. Duplicate original assessment template
+  2. Create new questions as copies of source questions
+  3. Assign new primary keys to copied questions
+  4. Link new questions to new template version
+- **Output**: New template version with copied questions
+- **Error Handling**: Invalid source template, duplicate version
 
 ### **5. Reporting & Analytics**
 
@@ -256,10 +308,10 @@ The Assessment Tracker is a 360-degree performance evaluation system designed to
 
 #### **FR-ADMIN-003: Question Management**
 - **Description**: Create and manage assessment questions
-- **Input**: Question data, action type
+- **Input**: Question data, action type, assessment type, category
 - **Process**:
   1. Validate question format
-  2. Manage question categories
+  2. Assign to assessment type and category
   3. Maintain question order
 - **Output**: Question management confirmation
 - **Error Handling**: Invalid question format, duplicate questions

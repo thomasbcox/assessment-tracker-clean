@@ -56,35 +56,61 @@
 - [ ] Implement proper session management
 - [ ] Add comprehensive logging
 
-### **Phase 2: Assessment Forms & Core Features** 🚧 IN PROGRESS
-**Duration**: 3-4 weeks  
+### **Phase 2: Assessment Types & Core Features** 🚧 IN PROGRESS
+**Duration**: 4-5 weeks  
 **Status**: 🚧 Planning
 
-#### **2.1 Assessment Creation & Management**
+#### **2.1 Assessment Type Implementation**
+- [ ] **Assessment Type Schema**
+  - Database tables for assessment types
+  - Template versioning system
+  - Category management per assessment type
+  - Question assignment to types and categories
+
+- [ ] **Three Assessment Types**
+  - **Manager Self-Assessment**: Sage Mind, Relating, Requiring categories
+  - **Team Member Assessment**: 6 team outcome categories
+  - **Director's MRI**: 6 team observation categories
+
+#### **2.2 Template Versioning System**
+- [ ] **Template Management**
+  - Create assessment template versions
+  - Duplicate original templates with new questions
+  - Template version assignment to users
+  - Version history tracking
+
+- [ ] **Question Versioning**
+  - Copy questions from source templates
+  - Assign new primary keys to copied questions
+  - Link questions to new template versions
+  - Maintain question order and categories
+
+#### **2.3 Assessment Creation & Management**
 - [ ] **Assessment Instance Creation**
   - API endpoint: `POST /api/assessments`
-  - Form component for assessment setup
+  - Assessment type selection
+  - Template version assignment
   - Period validation and assignment
   - Duplicate assessment prevention
 
 - [ ] **Assessment Question Display**
-  - Question component with 1-5 rating
+  - Question component with 1-7 rating scale
   - Category grouping and navigation
-  - Progress tracking
+  - Progress tracking per category
   - Draft saving functionality
 
 - [ ] **Assessment Completion**
   - Response validation (all questions required)
-  - Score range validation (1-5)
+  - Score range validation (1-7 scale)
   - Submission confirmation
   - Status updates
 
-#### **2.2 Assessment Dashboard**
+#### **2.4 Assessment Dashboard**
 - [ ] **Assessment List View**
-  - Filter by status (pending, in progress, completed)
+  - Filter by assessment type and status
   - Sort by due date and priority
   - Quick action buttons
-  - Progress indicators
+  - Progress indicators per type
 
 - [ ] **Assessment Detail View**
   - Question-by-question interface
@@ -92,16 +118,16 @@
   - Save draft functionality
   - Submit assessment workflow
 
-#### **2.3 Question Management**
+#### **2.5 Question Management**
 - [ ] **Question Display Components**
-  - Rating scale component (1-5 stars)
+  - Rating scale component (1-7 stars)
   - Category headers and navigation
   - Question text formatting
   - Response validation
 
 - [ ] **Assessment Progress**
   - Progress bar component
-  - Question counter
+  - Question counter per category
   - Category completion status
   - Time remaining indicator
 
@@ -130,23 +156,29 @@
   - Period overlap prevention
 
 - [ ] **Period Configuration**
-  - Question assignment by period
-  - Assessment type configuration
+  - Assessment type assignment by period
+  - Template version assignment
   - Due date management
   - Notification settings
 
-#### **3.3 Question Management**
-- [ ] **Question CRUD Operations**
-  - Create/edit assessment questions
-  - Category management
-  - Question ordering
-  - Question templates
+#### **3.3 Assessment Type & Template Management**
+- [ ] **Assessment Type CRUD**
+  - Create/edit assessment types
+  - Category management per type
+  - Type-specific configurations
+  - Type validation
 
-- [ ] **Question Templates**
-  - Predefined question sets
-  - Template application
-  - Custom question creation
-  - Question validation
+- [ ] **Template Version Management**
+  - Create new template versions
+  - Duplicate existing templates
+  - Version comparison tools
+  - Template assignment to periods
+
+- [ ] **Question Management**
+  - Create/edit assessment questions
+  - Category assignment
+  - Question ordering
+  - Template-specific questions
 
 ### **Phase 4: Team Management & Relationships** 📋 PLANNED
 **Duration**: 2-3 weeks  
@@ -161,22 +193,22 @@
 
 - [ ] **Team Dashboard**
   - Team member overview
-  - Assessment completion status
+  - Assessment completion status by type
   - Team performance metrics
   - Manager-specific views
 
-#### **4.2 Peer Review System**
-- [ ] **Peer Assignment**
-  - Peer relationship creation
-  - Bidirectional peer reviews
-  - Peer review scheduling
-  - Review completion tracking
+#### **4.2 Assessment Assignment**
+- [ ] **Assessment Type Assignment**
+  - Assign appropriate assessment types to users
+  - Manager self-assessment assignment
+  - Team member assessment assignment
+  - Director MRI assignment
 
-- [ ] **Peer Review Interface**
-  - Peer assessment forms
-  - Anonymous review options
-  - Peer feedback display
-  - Review validation
+- [ ] **Assessment Invitation System**
+  - Invite team members for manager assessment
+  - Invite directors for MRI assessments
+  - Relationship tracking
+  - Invitation status management
 
 ### **Phase 5: Reporting & Analytics** 📋 PLANNED
 **Duration**: 3-4 weeks  
@@ -184,35 +216,35 @@
 
 #### **5.1 Individual Reports**
 - [ ] **Personal Assessment Reports**
-  - Score breakdown by category
+  - Score breakdown by assessment type and category
   - Historical performance trends
   - Goal tracking
   - PDF export functionality
 
 - [ ] **Assessment History**
-  - Past assessment results
+  - Past assessment results by type
   - Performance comparisons
   - Improvement tracking
   - Goal setting interface
 
 #### **5.2 Team Reports**
 - [ ] **Manager Reports**
-  - Team performance overview
+  - Team performance overview by assessment type
   - Individual contributor analysis
   - Team trends and patterns
   - Comparative analytics
 
 - [ ] **Team Analytics**
-  - Team average scores
-  - Category performance
-  - Completion rates
+  - Team average scores by category
+  - Assessment type performance
+  - Completion rates by type
   - Performance distribution
 
 #### **5.3 System Analytics**
 - [ ] **Admin Analytics**
-  - System-wide statistics
+  - System-wide statistics by assessment type
   - User engagement metrics
-  - Assessment completion rates
+  - Assessment completion rates by type
   - Performance trends
 
 - [ ] **Advanced Reporting**
@@ -233,20 +265,20 @@
   - Notification emails
 
 - [ ] **Email Notifications**
-  - Assessment reminders
+  - Assessment reminders by type
   - Due date notifications
   - Completion confirmations
   - System announcements
 
 #### **6.2 Advanced Features**
-- [ ] **Assessment Templates**
-  - Predefined question sets
-  - Template management
-  - Custom template creation
-  - Template application
+- [ ] **Assessment Template Management**
+  - Template version control
+  - Template comparison tools
+  - Template rollback capabilities
+  - Template analytics
 
 - [ ] **Advanced Analytics**
-  - Performance benchmarking
+  - Performance benchmarking by assessment type
   - Predictive analytics
   - Custom metrics
   - Data visualization
@@ -289,46 +321,73 @@
    // Implement logging system
    ```
 
-### **Step 2: Assessment Forms** (Weeks 2-4)
+### **Step 2: Assessment Types & Templates** (Weeks 2-3)
+1. **Database Schema Updates**
+   ```typescript
+   // Assessment types table
+   // Template versions table
+   // Question categories table
+   // Template-question relationships
+   ```
+
+2. **Assessment Type API Routes**
+   ```typescript
+   // GET /api/assessment-types - List assessment types
+   // POST /api/assessment-types - Create assessment type
+   // GET /api/assessment-types/[id] - Get assessment type details
+   // GET /api/assessment-types/[id]/categories - Get categories
+   ```
+
+3. **Template Versioning API**
+   ```typescript
+   // POST /api/templates - Create template version
+   // GET /api/templates - List templates
+   // POST /api/templates/[id]/duplicate - Duplicate template
+   // GET /api/templates/[id]/questions - Get template questions
+   ```
+
+### **Step 3: Assessment Forms** (Weeks 4-6)
 1. **Create Assessment API Routes**
    ```typescript
-   // POST /api/assessments - Create assessment
-   // GET /api/assessments - List assessments
+   // POST /api/assessments - Create assessment with type and template
+   // GET /api/assessments - List assessments by type
    // PUT /api/assessments/[id] - Update assessment
    // GET /api/assessments/[id] - Get assessment details
    ```
 
 2. **Build Assessment Components**
    ```typescript
+   // AssessmentTypeSelector component
    // AssessmentForm component
    // QuestionDisplay component
-   // RatingScale component
+   // RatingScale component (1-7)
    // ProgressTracker component
    ```
 
 3. **Implement Assessment Workflow**
    ```typescript
-   // Assessment creation flow
+   // Assessment type selection
+   // Template version assignment
    // Question answering interface
-   // Response validation
+   // Response validation (1-7 scale)
    // Assessment submission
    ```
 
-### **Step 3: Admin Panel** (Weeks 5-7)
-1. **User Management Interface**
+### **Step 4: Admin Panel** (Weeks 7-9)
+1. **Assessment Type Management**
    ```typescript
-   // UserList component
-   // UserForm component
-   // RoleSelector component
-   // UserActions component
+   // AssessmentTypeList component
+   // AssessmentTypeForm component
+   // CategoryManager component
+   // TypeActions component
    ```
 
-2. **Period Management**
+2. **Template Management**
    ```typescript
-   // PeriodList component
-   // PeriodForm component
-   // PeriodStatus component
-   // PeriodActions component
+   // TemplateList component
+   // TemplateForm component
+   // TemplateVersionManager component
+   // TemplateActions component
    ```
 
 3. **Question Management**
@@ -339,13 +398,13 @@
    // QuestionOrder component
    ```
 
-### **Step 4: Team Management** (Weeks 8-9)
+### **Step 5: Team Management** (Weeks 10-11)
 1. **Relationship Management**
    ```typescript
    // RelationshipForm component
    // TeamSelector component
    // ManagerAssignment component
-   // PeerAssignment component
+   // AssessmentTypeAssignment component
    ```
 
 2. **Team Dashboard**
@@ -356,7 +415,7 @@
    // TeamActions component
    ```
 
-### **Step 5: Reporting System** (Weeks 10-12)
+### **Step 6: Reporting System** (Weeks 12-14)
 1. **Report Components**
    ```typescript
    // IndividualReport component
@@ -373,7 +432,7 @@
    // ExportUtilities
    ```
 
-### **Step 6: Polish & Deploy** (Weeks 13-14)
+### **Step 7: Polish & Deploy** (Weeks 15-16)
 1. **Performance Optimization**
    ```typescript
    // Code splitting
@@ -400,14 +459,14 @@
 
 ### **Feature Metrics**
 - [ ] **User Adoption**: 80% of users complete assessments
-- [ ] **Completion Rate**: 90% assessment completion rate
+- [ ] **Completion Rate**: 90% assessment completion rate by type
 - [ ] **User Satisfaction**: 4.5/5 user rating
 - [ ] **System Usage**: 100+ concurrent users supported
 
 ### **Business Metrics**
 - [ ] **Assessment Efficiency**: 50% reduction in assessment time
-- [ ] **Data Quality**: 95% complete assessment data
-- [ ] **Reporting Accuracy**: 100% accurate analytics
+- [ ] **Data Quality**: 95% complete assessment data by type
+- [ ] **Reporting Accuracy**: 100% accurate analytics by assessment type
 - [ ] **System Scalability**: Support for 1000+ users
 
 ## 🚀 Deployment Strategy

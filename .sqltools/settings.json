@@ -1,0 +1,16 @@
+{
+  "connections": [
+    {
+      "name": "Assessment Tracker DB",
+      "driver": "SQLite",
+      "server": "",
+      "port": 0,
+      "database": "/Users/thomasbcox/GIT_local/assessment-tracker-clean/dev.db",
+      "username": "",
+      "password": "",
+      "connectionTimeout": 15,
+      "connectionRetry": 3,
+      "connectionRetryInterval": 5
+    }
+  ]
+} 
