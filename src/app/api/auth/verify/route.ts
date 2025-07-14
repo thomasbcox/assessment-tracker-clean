@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyMagicLink } from '@/lib/auth';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
       message: 'Login successful',
     });
   } catch (error) {
-    console.error('Verification error:', error);
+    logger.authError('verify', error as Error, { token: 'unknown' });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

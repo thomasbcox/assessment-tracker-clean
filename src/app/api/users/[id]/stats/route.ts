@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, assessmentInstances, assessmentPeriods } from '@/lib/db';
 import { eq, and, isNull, isNotNull } from 'drizzle-orm';
+import { logger } from '@/lib/logger';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = params.id;
+    const { id: userId } = await params;
 
     // Get all assessment instances for the user
     const instances = await db
@@ -31,7 +32,7 @@ export async function GET(
       pending,
     });
   } catch (error) {
-    console.error('Error fetching user stats:', error);
+    logger.dbError('fetch user stats', error as Error, { userId: 'unknown' });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

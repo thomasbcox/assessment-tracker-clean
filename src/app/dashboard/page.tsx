@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { sessionManager } from '@/lib/session';
 
 interface User {
   id: string;
@@ -28,9 +29,8 @@ export default function DashboardPage() {
   });
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      const user = JSON.parse(userData);
+    const user = sessionManager.getUser();
+    if (user) {
       setUser(user);
       
       // Fetch user's assessment stats

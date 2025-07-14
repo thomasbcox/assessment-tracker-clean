@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { sessionManager } from '@/lib/session';
 
 export default function VerifyPage() {
   const router = useRouter();
@@ -36,8 +37,8 @@ export default function VerifyPage() {
           setStatus('success');
           setMessage('Login successful! Redirecting...');
           
-          // Store user data in localStorage for demo purposes
-          localStorage.setItem('user', JSON.stringify(result.user));
+          // Store user data in session
+          sessionManager.createSession(result.user, token);
           
           // Redirect to dashboard after a short delay
           setTimeout(() => {

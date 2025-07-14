@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { sessionManager } from '@/lib/session';
 
 interface User {
   id: string;
@@ -23,9 +24,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      setUser(JSON.parse(userData));
+    const user = sessionManager.getUser();
+    if (user) {
+      setUser(user);
     } else {
       router.push('/');
     }
@@ -33,7 +34,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [router]);
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
+    sessionManager.clearSession();
     router.push('/');
   };
 

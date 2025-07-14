@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createMagicLink, getUserByEmail } from '@/lib/auth';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
       ...(process.env.NODE_ENV === 'development' && { token }),
     });
   } catch (error) {
-    console.error('Login error:', error);
+    logger.authError('login', error as Error, { email: 'unknown' });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
