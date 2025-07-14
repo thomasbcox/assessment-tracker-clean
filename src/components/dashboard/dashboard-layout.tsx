@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { sessionManager } from '@/lib/session';
 
 interface User {
@@ -40,8 +38,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#DDE5CC]">
+        <div className="glass-card rounded-2xl p-8 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-dark-blue mx-auto mb-4"></div>
+          <p className="text-brand-dark-blue font-medium">Loading your dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -51,59 +52,72 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-300">
+    <div className="min-h-screen bg-[#DDE5CC]">
+      {/* Header with inline navigation */}
+      <header className="header-glass">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900">
+          <div className="flex justify-between items-center h-24">
+            {/* Left side: Logo and title */}
+            <div className="flex items-center space-x-6">
+              {/* Logo - 50% larger */}
+              <img 
+                src="/TransformativeLeadershipLab-PrimaryLogo-LightBackgrounds.png" 
+                alt="TRANSFORMATIVE Leadership Lab" 
+                className="h-16 w-auto"
+              />
+              <h1 className="text-2xl font-bold text-brand-dark-blue">
                 Assessment Tracker
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-700">
-                Welcome, {user.firstName || user.email}
+
+            {/* Center: Navigation */}
+            <div className="flex space-x-8">
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="nav-item text-brand-dark-blue/80 hover:text-brand-dark-blue hover:border-brand-dark-blue/50 transition-all duration-200"
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => router.push('/dashboard/assessments')}
+                className="nav-item text-brand-dark-blue/80 hover:text-brand-dark-blue hover:border-brand-dark-blue/50 transition-all duration-200"
+              >
+                Assessments
+              </button>
+              {user.role === 'admin' || user.role === 'super-admin' ? (
+                <button
+                  onClick={() => router.push('/dashboard/admin')}
+                  className="nav-item text-brand-dark-blue/80 hover:text-brand-dark-blue hover:border-brand-dark-blue/50 transition-all duration-200"
+                >
+                  Admin
+                </button>
+              ) : null}
+            </div>
+
+            {/* Right side: User info and logout */}
+            <div className="flex items-center space-x-6">
+              <div className="text-brand-dark-blue/90">
+                Welcome, <span className="font-semibold">{user.firstName || user.email}</span>
               </div>
-              <Button variant="outline" onClick={handleLogout}>
+              <button 
+                onClick={handleLogout}
+                className="btn-modern bg-brand-dark-blue bg-opacity-10 text-brand-dark-blue hover:bg-brand-dark-blue hover:bg-opacity-20 backdrop-blur-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
                 Logout
-              </Button>
+              </button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Navigation */}
-      <nav className="bg-white border-b border-gray-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="py-4 px-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-400"
-            >
-              Dashboard
-            </button>
-            <button
-              onClick={() => router.push('/dashboard/assessments')}
-              className="py-4 px-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-400"
-            >
-              Assessments
-            </button>
-            {user.role === 'admin' || user.role === 'super-admin' ? (
-              <button
-                onClick={() => router.push('/dashboard/admin')}
-                className="py-4 px-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-400"
-              >
-                Admin
-              </button>
-            ) : null}
-          </div>
-        </div>
-      </nav>
-
       {/* Main content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {children}
+      <main className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div className="animate-fade-in-up">
+          {children}
+        </div>
       </main>
     </div>
   );
