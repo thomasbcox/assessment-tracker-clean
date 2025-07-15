@@ -22,8 +22,14 @@ export async function GET(
       .from(assessmentPeriods)
       .where(eq(assessmentPeriods.isActive, 1));
 
-    const total = activePeriods.length;
-    const completed = instances.filter(instance => instance.completedAt !== null).length;
+    // Count instances by status for active periods
+    const activeInstanceIds = activePeriods.map(period => period.id);
+    const activeInstances = instances.filter(instance => 
+      activeInstanceIds.includes(instance.periodId)
+    );
+
+    const total = activeInstances.length;
+    const completed = activeInstances.filter(instance => instance.completedAt !== null).length;
     const pending = total - completed;
 
     return NextResponse.json({
