@@ -248,6 +248,20 @@ export default function AdminDashboardPage() {
             <div className="glass-card p-6">
               <h3 className="text-lg font-semibold text-brand-dark-blue mb-4">Quick Actions</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {user.role === 'super-admin' && (
+                  <button
+                    onClick={() => router.push('/builder')}
+                    className="glass-card p-4 text-left hover:bg-white/20 transition-all duration-200"
+                  >
+                    <div className="w-8 h-8 bg-brand-dark-blue/10 rounded-lg flex items-center justify-center mb-2">
+                      <svg className="w-4 h-4 text-brand-dark-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </div>
+                    <h4 className="font-medium text-brand-dark-blue">Template Builder</h4>
+                    <p className="text-sm text-brand-dark-blue/70">Create and manage assessment templates</p>
+                  </button>
+                )}
                 <button className="btn-modern bg-brand-dark-blue text-white hover:bg-brand-dark-blue/90">
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />

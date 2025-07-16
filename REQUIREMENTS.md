@@ -186,7 +186,7 @@ The system supports three distinct assessment types, each with specific purposes
 
 ### **3. Assessment Management**
 
-#### **FR-ASSESS-001: Assessment Creation**
+#### **FR-ASSESS-001: Assessment Creation** 🚧 IN PROGRESS
 - **Description**: Create new assessment instances for users
 - **Input**: User ID, period ID, assessment type, template version
 - **Process**:
@@ -196,6 +196,7 @@ The system supports three distinct assessment types, each with specific purposes
   4. Assign questions based on assessment type and template version
 - **Output**: Assessment instance with questions
 - **Error Handling**: Invalid user/period, duplicate assessment
+- **Status**: Database schema and API structure ready, implementation pending
 
 #### **FR-ASSESS-002: Assessment Completion**
 - **Description**: Complete assessment with all responses
@@ -240,7 +241,7 @@ The system supports three distinct assessment types, each with specific purposes
 - **Output**: Validation result
 - **Error Handling**: Missing responses, invalid scores
 
-#### **FR-QUEST-003: Template Version Management**
+#### **FR-QUEST-003: Template Version Management** ✅ COMPLETED
 - **Description**: Create new versions of assessment templates
 - **Input**: Source template ID, new version data
 - **Process**:
@@ -250,6 +251,7 @@ The system supports three distinct assessment types, each with specific purposes
   4. Link new questions to new template version
 - **Output**: New template version with copied questions
 - **Error Handling**: Invalid source template, duplicate version
+- **Status**: Database schema and sample data implemented, admin interface pending
 
 ### **5. Reporting & Analytics**
 

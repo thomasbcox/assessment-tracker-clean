@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { sessionManager } from '@/lib/session';
@@ -15,13 +16,26 @@ interface MagicLink {
 }
 
 export default function TokensPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
   const [tokens, setTokens] = useState<MagicLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [cleanupLoading, setCleanupLoading] = useState(false);
 
   useEffect(() => {
-    fetchTokens();
-  }, []);
+    const currentUser = sessionManager.getUser();
+    if (currentUser) {
+      // Check if user has admin privileges
+      if (currentUser.role !== 'admin' && currentUser.role !== 'super-admin') {
+        router.push('/dashboard');
+        return;
+      }
+      setUser(currentUser);
+      fetchTokens();
+    } else {
+      router.push('/');
+    }
+  }, [router]);
 
   const fetchTokens = async () => {
     try {
@@ -75,6 +89,26 @@ export default function TokensPage() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+      </div>
+    );
+  }
+
+  if (!user || (user.role !== 'admin' && user.role !== 'super-admin')) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🚫</div>
+          <h3 className="text-xl font-semibold mb-2">Access Denied</h3>
+          <p className="text-gray-600 mb-6">
+            You don't have permission to access this page.
+          </p>
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Return to Dashboard
+          </button>
+        </div>
       </div>
     );
   }

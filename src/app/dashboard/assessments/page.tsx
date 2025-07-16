@@ -16,11 +16,13 @@ interface Assessment {
   id: string;
   title: string;
   description: string;
-  status: 'draft' | 'active' | 'completed' | 'archived';
+  status: 'draft' | 'active' | 'completed' | 'archived' | 'pending';
   createdAt: string;
   updatedAt: string;
   assignedTo?: string;
   dueDate?: string;
+  periodName?: string;
+  templateId?: number;
 }
 
 export default function AssessmentsPage() {
@@ -28,47 +30,30 @@ export default function AssessmentsPage() {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'draft' | 'active' | 'completed' | 'archived'>('all');
+  const [filter, setFilter] = useState<'all' | 'draft' | 'active' | 'completed' | 'archived' | 'pending'>('all');
 
   useEffect(() => {
     const user = sessionManager.getUser();
     if (user) {
       setUser(user);
-      // TODO: Fetch assessments from API
-      // For now, using mock data
-      setAssessments([
-        {
-          id: '1',
-          title: 'Leadership Competency Assessment',
-          description: 'Comprehensive evaluation of leadership skills and competencies',
-          status: 'active',
-          createdAt: '2024-01-15T10:00:00Z',
-          updatedAt: '2024-01-20T14:30:00Z',
-          assignedTo: 'john.doe@example.com',
-          dueDate: '2024-02-15T23:59:59Z',
-        },
-        {
-          id: '2',
-          title: 'Team Collaboration Assessment',
-          description: 'Assessment of team collaboration and communication skills',
-          status: 'draft',
-          createdAt: '2024-01-10T09:00:00Z',
-          updatedAt: '2024-01-10T09:00:00Z',
-        },
-        {
-          id: '3',
-          title: 'Strategic Thinking Evaluation',
-          description: 'Evaluation of strategic thinking and planning capabilities',
-          status: 'completed',
-          createdAt: '2024-01-05T11:00:00Z',
-          updatedAt: '2024-01-25T16:45:00Z',
-          assignedTo: 'jane.smith@example.com',
-          dueDate: '2024-01-30T23:59:59Z',
-        },
-      ]);
+      fetchUserAssessments(user.id);
     }
     setIsLoading(false);
   }, []);
+
+  const fetchUserAssessments = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/users/${userId}/assessments`);
+      if (response.ok) {
+        const data = await response.json();
+        setAssessments(data);
+      } else {
+        console.error('Failed to fetch assessments:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error fetching assessments:', error);
+    }
+  };
 
   const filteredAssessments = assessments.filter(assessment => 
     filter === 'all' ? true : assessment.status === filter
@@ -77,6 +62,7 @@ export default function AssessmentsPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'bg-brand-vibrant-teal text-white';
+      case 'pending': return 'bg-yellow-500 text-white';
       case 'draft': return 'bg-gray-500 text-white';
       case 'completed': return 'bg-brand-dark-teal text-white';
       case 'archived': return 'bg-gray-400 text-white';
@@ -97,7 +83,25 @@ export default function AssessmentsPage() {
   }
 
   if (!user) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#DDE5CC]">
+        <div className="glass-card rounded-2xl p-8 text-center">
+          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-brand-dark-blue mb-2">Authentication Required</h2>
+          <p className="text-brand-dark-blue/70 mb-4">Please log in to access assessments.</p>
+          <button 
+            onClick={() => window.location.href = '/'}
+            className="btn-modern gradient-primary text-white"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -123,7 +127,7 @@ export default function AssessmentsPage() {
         {/* Filters */}
         <div className="glass-card p-4">
           <div className="flex flex-wrap gap-2">
-            {(['all', 'draft', 'active', 'completed', 'archived'] as const).map((status) => (
+            {(['all', 'pending', 'draft', 'active', 'completed', 'archived'] as const).map((status) => (
               <button
                 key={status}
                 onClick={() => setFilter(status)}
@@ -157,19 +161,19 @@ export default function AssessmentsPage() {
               </p>
 
               <div className="space-y-2 text-sm text-brand-dark-blue/60">
-                {assessment.assignedTo && (
+                {assessment.periodName && (
                   <div className="flex items-center">
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    {assessment.assignedTo}
+                    Period: {assessment.periodName}
                   </div>
                 )}
                 
                 {assessment.dueDate && (
                   <div className="flex items-center">
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     Due: {new Date(assessment.dueDate).toLocaleDateString()}
                   </div>

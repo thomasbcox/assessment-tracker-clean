@@ -1,0 +1,33 @@
+{
+  "extends": [
+    "next/core-web-vitals",
+    "eslint:recommended",
+    "@typescript-eslint/recommended"
+  ],
+  "plugins": ["@typescript-eslint"],
+  "rules": {
+    "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/no-explicit-any": "warn",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["src/app/**/page.tsx", "src/components/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["react"],
+                "importNames": ["useState", "useEffect", "useRouter", "useCallback", "useMemo", "useRef", "useContext", "useReducer"],
+                "message": "This hook requires the 'use client' directive. Add 'use client' at the top of the file."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+} 
