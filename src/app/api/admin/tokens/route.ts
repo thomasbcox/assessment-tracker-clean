@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, magicLinks } from '@/lib/db';
-import { logger } from '@/lib/logger';
+import { ServiceError } from '@/lib/types/service-interfaces';
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,7 +17,6 @@ export async function GET(request: NextRequest) {
       count: tokens.length
     });
   } catch (error) {
-    logger.error('admin-tokens', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

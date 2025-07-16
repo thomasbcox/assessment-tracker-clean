@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyMagicLink } from '@/lib/auth';
-import { logger } from '@/lib/logger';
+import { AuthService } from '@/lib/services/auth';
+import { ServiceError } from '@/lib/types/service-interfaces';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,8 +13,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify magic link
-    const user = await verifyMagicLink(token);
+    // Verify magic link using auth service
+    const user = await AuthService.verifyMagicLink(token);
 
     if (!user) {
       return NextResponse.json(
@@ -30,7 +30,13 @@ export async function POST(request: NextRequest) {
       message: 'Login successful',
     });
   } catch (error) {
-    logger.authError('verify', error as Error, { token: 'unknown' });
+    if (error instanceof ServiceError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

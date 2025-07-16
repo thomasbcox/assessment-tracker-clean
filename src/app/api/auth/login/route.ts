@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createMagicLink, getUserByEmail } from '@/lib/auth';
-import { logger } from '@/lib/logger';
+import { AuthService } from '@/lib/services/auth';
+import { ServiceError } from '@/lib/types/service-interfaces';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,17 +13,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user exists
-    const user = await getUserByEmail(email);
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    // Create magic link (this will handle rate limiting and token invalidation)
-    const token = await createMagicLink(email);
+    // Use auth service to handle login logic
+    const token = await AuthService.createMagicLink(email);
 
     // In a real app, you would send an email here
     // For demo purposes, we'll just return the token
@@ -35,6 +26,13 @@ export async function POST(request: NextRequest) {
       ...(process.env.NODE_ENV === 'development' && { token }),
     });
   } catch (error) {
+    if (error instanceof ServiceError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode }
+      );
+    }
+    
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
     // Handle rate limiting specifically
@@ -45,7 +43,6 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    logger.authError('login', error as Error, { email: 'unknown' });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cleanupExpiredTokens } from '@/lib/auth';
-import { logger } from '@/lib/logger';
+import { AuthService } from '@/lib/services/auth';
+import { ServiceError } from '@/lib/types/service-interfaces';
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,9 +10,7 @@ export async function POST(request: NextRequest) {
     const { action } = await request.json();
     
     if (action === 'cleanup-tokens') {
-      await cleanupExpiredTokens();
-      
-      logger.info('admin-cleanup', 'Expired tokens cleaned up');
+      await AuthService.cleanupExpiredTokens();
       
       return NextResponse.json({
         message: 'Expired tokens cleaned up successfully',
@@ -25,7 +23,13 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   } catch (error) {
-    logger.error('admin-cleanup', error as Error);
+    if (error instanceof ServiceError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

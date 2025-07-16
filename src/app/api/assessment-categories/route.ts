@@ -1,19 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, assessmentCategories } from '@/lib/db';
-import { eq } from 'drizzle-orm';
-import { logger } from '@/lib/logger';
+import { getActiveAssessmentCategories, createAssessmentCategory, validateCategoryData } from '@/lib/services/assessment-categories';
 
 export async function GET(request: NextRequest) {
   try {
-    const categories = await db
-      .select()
-      .from(assessmentCategories)
-      .where(eq(assessmentCategories.isActive, 1))
-      .orderBy(assessmentCategories.displayOrder);
-
+    const categories = await getActiveAssessmentCategories();
     return NextResponse.json(categories);
   } catch (error) {
-    logger.dbError('fetch assessment categories', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -24,25 +16,24 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { assessmentTypeId, name, description, displayOrder } = body;
-
-    if (!assessmentTypeId || !name || !displayOrder) {
+    const validation = validateCategoryData(body);
+    
+    if (!validation.isValid) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: validation.error },
         { status: 400 }
       );
     }
 
-    const newCategory = await db.insert(assessmentCategories).values({
-      assessmentTypeId: parseInt(assessmentTypeId),
-      name,
-      description,
-      displayOrder: parseInt(displayOrder),
-    }).returning();
+    const newCategory = await createAssessmentCategory({
+      assessmentTypeId: parseInt(body.assessmentTypeId),
+      name: body.name,
+      description: body.description,
+      displayOrder: parseInt(body.displayOrder),
+    });
 
-    return NextResponse.json(newCategory[0]);
+    return NextResponse.json(newCategory);
   } catch (error) {
-    logger.dbError('create assessment category', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -44,12 +44,31 @@ npm run check:client
 ```
 
 ### Current Test Status
-- **Total Test Suites**: 21
-- **Passing**: 3 suites (14%)
-- **Failing**: 18 suites (86%)
-- **Total Tests**: 168 (89 passing, 79 failing)
+- **Total Tests**: 267 tests across 23 test suites
+- **Passing**: 188 tests (70.4%)
+- **Failing**: 79 tests (29.6%)
 
-**Note**: Test suite has known issues with database constraints and API route testing that are being addressed.
+**Note**: Core business logic and utilities have excellent test coverage. Remaining failures are primarily UI test expectations and legacy API route tests.
+
+### Test Data Builder System
+A comprehensive test data builder system has been implemented for robust testing with complex database relationships:
+
+- **Dependency-aware architecture** with automatic foreign key management
+- **Fluent configuration API** for easy test data creation
+- **Type-safe builders** with full TypeScript support
+- **Database cleanup utilities** for proper test isolation
+
+**Usage Example:**
+```typescript
+const builder = createSimpleTestDataBuilder(db);
+const result = await builder.create({
+  user: { email: 'manager@company.com', role: 'manager' },
+  assessmentType: { name: 'Leadership Assessment' },
+  assessmentPeriod: { name: 'Q1 2024', isActive: 1 }
+});
+```
+
+See [TEST_DATA_BUILDER_SUMMARY.md](TEST_DATA_BUILDER_SUMMARY.md) for complete documentation.
 
 ## 🛠️ Development
 
@@ -80,10 +99,24 @@ npx tsc --noEmit
 
 ## 📚 Documentation
 
-- [Development Guidelines](DEVELOPMENT_GUIDELINES.md) - Coding standards and best practices
-- [Testing Documentation](TESTING.md) - Comprehensive testing guide
-- [Requirements](REQUIREMENTS.md) - Feature requirements and specifications
-- [Roadmap](ROADMAP.md) - Development phases and progress
+### Core Documentation
+- **[Architecture](ARCHITECTURE.md)** - System architecture and technical patterns
+- **[Architecture Decisions](DECISIONS.md)** - Key technical decisions and rationale
+- **[Development Guidelines](DEVELOPMENT_GUIDELINES.md)** - Coding standards and best practices
+- **[Development History](DEVELOPMENT_HISTORY.md)** - Project timeline and milestones
+- **[Service Layer Pattern](SERVICE_LAYER_PATTERN.md)** - API architecture and testing strategy
+- **[Testing Documentation](TESTING.md)** - Comprehensive testing guide
+- **[API Testing Strategy](API_TESTING_STRATEGY.md)** - Service layer testing approach
+- **[Test Data Builder Summary](TEST_DATA_BUILDER_SUMMARY.md)** - Comprehensive test data builder system documentation
+
+### Requirements & Planning
+- **[Requirements](REQUIREMENTS.md)** - Feature requirements and specifications
+- **[Roadmap](ROADMAP.md)** - Development phases and progress
+- **[Database Schema](database-schema.md)** - Database design and relationships
+
+### Technical Details
+- **[ES Modules Migration](ES_MODULES_MIGRATION.md)** - Migration from CommonJS to ES modules
+- **[Additional Tests](ADDITIONAL_TESTS.md)** - Extended testing scenarios
 
 ## 🧪 Testing Stack
 

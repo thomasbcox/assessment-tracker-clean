@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, assessmentQuestions, assessmentCategories } from '@/lib/db';
-import { eq } from 'drizzle-orm';
-import { logger } from '@/lib/logger';
+import { AssessmentQuestionsService } from '@/lib/services/assessment-questions';
+import { ServiceError } from '@/lib/types/service-interfaces';
 
 export async function GET(
   request: NextRequest,
@@ -9,24 +8,16 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-
-    const questions = await db
-      .select({
-        id: assessmentQuestions.id,
-        templateId: assessmentQuestions.templateId,
-        categoryId: assessmentQuestions.categoryId,
-        questionText: assessmentQuestions.questionText,
-        displayOrder: assessmentQuestions.displayOrder,
-        categoryName: assessmentCategories.name,
-      })
-      .from(assessmentQuestions)
-      .innerJoin(assessmentCategories, eq(assessmentQuestions.categoryId, assessmentCategories.id))
-      .where(eq(assessmentQuestions.templateId, parseInt(id)))
-      .orderBy(assessmentQuestions.displayOrder);
-
+    const questions = await AssessmentQuestionsService.getQuestionsByTemplate(parseInt(id));
     return NextResponse.json(questions);
   } catch (error) {
-    logger.dbError('fetch template questions', error as Error);
+    if (error instanceof ServiceError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -41,25 +32,23 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { categoryId, questionText, displayOrder } = body;
+    
+    const newQuestion = await AssessmentQuestionsService.createQuestion({
+      templateId: parseInt(id),
+      categoryId: parseInt(body.categoryId),
+      questionText: body.questionText,
+      displayOrder: parseInt(body.displayOrder)
+    });
 
-    if (!categoryId || !questionText || !displayOrder) {
+    return NextResponse.json(newQuestion);
+  } catch (error) {
+    if (error instanceof ServiceError) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
+        { error: error.message },
+        { status: error.statusCode }
       );
     }
-
-    const newQuestion = await db.insert(assessmentQuestions).values({
-      templateId: parseInt(id),
-      categoryId: parseInt(categoryId),
-      questionText,
-      displayOrder: parseInt(displayOrder),
-    }).returning();
-
-    return NextResponse.json(newQuestion[0]);
-  } catch (error) {
-    logger.dbError('create template question', error as Error);
+    
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
