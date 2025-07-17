@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
+  email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -18,6 +18,7 @@ export function LoginForm() {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -43,6 +44,7 @@ export function LoginForm() {
           type: 'success',
           text: 'Check your email for a login link!',
         });
+        reset(); // Clear the form after successful submission
       } else {
         setMessage({
           type: 'error',
