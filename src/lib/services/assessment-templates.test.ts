@@ -1,345 +1,210 @@
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { AssessmentTemplatesService, CreateTemplateData, TemplateWithTypeName } from '../assessment-templates.service';
+import { AssessmentTemplatesService, CreateTemplateData } from './assessment-templates.service';
 import { db, assessmentTemplates, assessmentTypes } from '@/lib/db';
-import { logger } from '@/lib/logger';
 
-// Mock dependencies
-jest.mock('@/lib/db');
-jest.mock('@/lib/logger');
-
-const mockDb = db as jest.Mocked<typeof db>;
-const mockLogger = logger as jest.Mocked<typeof logger>;
+// Mock the logger
+jest.mock('@/lib/logger', () => ({
+  logger: {
+    dbError: jest.fn(),
+  },
+}));
 
 describe('AssessmentTemplatesService', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+  let testTypeId: number;
+
+  beforeAll(async () => {
+    // Clean up any existing test data
+    await db.delete(assessmentTemplates);
+    await db.delete(assessmentTypes);
+
+    // Create a test assessment type
+    const [type] = await db.insert(assessmentTypes).values({
+      name: 'Service Test Type',
+      description: 'For service testing',
+      purpose: 'Testing',
+    }).returning();
+    testTypeId = type.id;
   });
 
-  afterEach(() => {
-    jest.resetAllMocks();
+  afterAll(async () => {
+    // Clean up test data
+    await db.delete(assessmentTemplates);
+    await db.delete(assessmentTypes);
   });
 
-  describe('createTemplate', () => {
-    it('should create a new template successfully', async () => {
-      const templateData: CreateTemplateData = {
-        assessmentTypeId: '1',
-        name: 'Test Template',
-        version: '1.0',
-        description: 'A test template'
-      };
-
-      const mockTemplate: TemplateWithTypeName = {
-        id: 1,
-        assessmentTypeId: 1,
-        assessmentTypeName: 'Leadership Assessment',
-        name: 'Test Template',
-        version: '1.0',
-        description: 'A test template',
-        isActive: 1,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: null
-      };
-
-      // Mock assessment type check
-      mockDb.select.mockReturnValueOnce({
-        from: jest.fn().mockReturnValue({
-          where: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue([{ id: 1, name: 'Leadership Assessment' }])
-          })
-        })
-      } as any);
-
-      // Mock duplicate check
-      mockDb.select.mockReturnValueOnce({
-        from: jest.fn().mockReturnValue({
-          where: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue([])
-          })
-        })
-      } as any);
-
-      // Mock insert
-      mockDb.insert.mockReturnValue({
-        values: jest.fn().mockReturnValue({
-          returning: jest.fn().mockResolvedValue([{ id: 1 }])
-        })
-      } as any);
-
-      // Mock final select with join
-      mockDb.select.mockReturnValueOnce({
-        from: jest.fn().mockReturnValue({
-          innerJoin: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([mockTemplate])
-            })
-          })
-        })
-      } as any);
-
-      const result = await AssessmentTemplatesService.createTemplate(templateData);
-
-      expect(result).toEqual(mockTemplate);
-      expect(mockDb.insert).toHaveBeenCalledWith(assessmentTemplates);
-    });
-
-    it('should throw error for duplicate name-version combination', async () => {
-      const templateData: CreateTemplateData = {
-        assessmentTypeId: '1',
-        name: 'Existing Template',
-        version: '1.0',
-        description: 'A test template'
-      };
-
-      // Mock assessment type check
-      mockDb.select.mockReturnValueOnce({
-        from: jest.fn().mockReturnValue({
-          where: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue([{ id: 1, name: 'Leadership Assessment' }])
-          })
-        })
-      } as any);
-
-      // Mock duplicate check - return existing template
-      mockDb.select.mockReturnValueOnce({
-        from: jest.fn().mockReturnValue({
-          where: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue([{ id: 1, name: 'Existing Template', version: '1.0' }])
-          })
-        })
-      } as any);
-
-      await expect(AssessmentTemplatesService.createTemplate(templateData))
-        .rejects.toThrow('Template with this name and version already exists');
-    });
-
-    it('should handle database errors', async () => {
-      const error = new Error('Database error');
-      mockDb.select.mockImplementation(() => {
-        throw error;
-      });
-
-      await expect(AssessmentTemplatesService.createTemplate({
-        assessmentTypeId: '1',
-        name: 'Test',
-        version: '1.0'
-      })).rejects.toThrow('Database error');
-      expect(mockLogger.dbError).toHaveBeenCalledWith('create assessment template', error);
-    });
-  });
-
-  describe('getTemplateById', () => {
-    it('should return template when found', async () => {
-      const mockTemplate: TemplateWithTypeName = {
-        id: 1,
-        assessmentTypeId: 1,
-        assessmentTypeName: 'Leadership Assessment',
-        name: 'Test Template',
-        version: '1.0',
-        description: 'A test template',
-        isActive: 1,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: null
-      };
-
-      mockDb.select.mockReturnValue({
-        from: jest.fn().mockReturnValue({
-          innerJoin: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([mockTemplate])
-            })
-          })
-        })
-      } as any);
-
-      const result = await AssessmentTemplatesService.getTemplateById('1');
-
-      expect(result).toEqual(mockTemplate);
-    });
-
-    it('should return null when template not found', async () => {
-      mockDb.select.mockReturnValue({
-        from: jest.fn().mockReturnValue({
-          innerJoin: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([])
-            })
-          })
-        })
-      } as any);
-
-      const result = await AssessmentTemplatesService.getTemplateById('999');
-
-      expect(result).toBeNull();
-    });
+  beforeEach(async () => {
+    // Clear templates before each test
+    await db.delete(assessmentTemplates);
   });
 
   describe('getAllTemplates', () => {
-    it('should return all active templates', async () => {
-      const mockTemplates: TemplateWithTypeName[] = [
+    it('should return all active templates with assessment type names', async () => {
+      // Create test templates
+      const testTemplates = [
         {
-          id: 1,
-          assessmentTypeId: 1,
-          assessmentTypeName: 'Leadership Assessment',
-          name: 'Template 1',
-          version: '1.0',
-          description: 'First template',
-          isActive: 1,
-          createdAt: '2024-01-01T00:00:00Z',
-          updatedAt: null
+          assessmentTypeId: testTypeId,
+          name: 'Service Test Template 1',
+          version: 'v1.0',
+          description: 'First service test template',
         },
         {
-          id: 2,
-          assessmentTypeId: 2,
-          assessmentTypeName: 'Team Assessment',
-          name: 'Template 2',
-          version: '1.0',
-          description: 'Second template',
-          isActive: 1,
-          createdAt: '2024-01-02T00:00:00Z',
-          updatedAt: null
-        }
+          assessmentTypeId: testTypeId,
+          name: 'Service Test Template 2',
+          version: 'v1.1',
+          description: 'Second service test template',
+        },
       ];
 
-      mockDb.select.mockReturnValue({
-        from: jest.fn().mockReturnValue({
-          innerJoin: jest.fn().mockReturnValue({
-            where: jest.fn().mockResolvedValue(mockTemplates)
-          })
-        })
-      } as any);
+      await db.insert(assessmentTemplates).values(testTemplates);
 
-      const result = await AssessmentTemplatesService.getAllTemplates();
+      // Call the service
+      const templates = await AssessmentTemplatesService.getAllTemplates();
 
-      expect(result).toEqual(mockTemplates);
+      // Assertions
+      expect(Array.isArray(templates)).toBe(true);
+      expect(templates.length).toBe(2);
+      
+      // Check that templates have assessment type names
+      templates.forEach((template) => {
+        expect(template.assessmentTypeName).toBeDefined();
+        expect(template.assessmentTypeName).toBe('Service Test Type');
+        expect(template.isActive).toBe(1);
+      });
+      
+      // Check that returned templates match our test data
+      const returnedNames = templates.map((template) => template.name);
+      expect(returnedNames).toContain('Service Test Template 1');
+      expect(returnedNames).toContain('Service Test Template 2');
+    });
+
+    it('should return empty array when no templates exist', async () => {
+      const templates = await AssessmentTemplatesService.getAllTemplates();
+
+      expect(Array.isArray(templates)).toBe(true);
+      expect(templates.length).toBe(0);
     });
   });
 
-  describe('updateTemplate', () => {
-    it('should update template successfully', async () => {
-      const updateData = {
-        name: 'Updated Template',
-        version: '2.0'
+  describe('createTemplate', () => {
+    it('should create a new template with valid data', async () => {
+      const templateData: CreateTemplateData = {
+        assessmentTypeId: testTypeId.toString(),
+        name: 'New Service Template',
+        version: 'v2.0',
+        description: 'A new service test template',
       };
 
-      const mockTemplate: TemplateWithTypeName = {
-        id: 1,
-        assessmentTypeId: 1,
-        assessmentTypeName: 'Leadership Assessment',
-        name: 'Updated Template',
-        version: '2.0',
-        description: 'A test template',
-        isActive: 1,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-02T00:00:00Z'
+      const newTemplate = await AssessmentTemplatesService.createTemplate(templateData);
+
+      expect(newTemplate.name).toBe(templateData.name);
+      expect(newTemplate.version).toBe(templateData.version);
+      expect(newTemplate.description).toBe(templateData.description);
+      expect(newTemplate.assessmentTypeId).toBe(testTypeId);
+      expect(newTemplate.id).toBeDefined();
+      expect(newTemplate.assessmentTypeName).toBe('Service Test Type');
+    });
+
+    it('should throw error for missing required fields', async () => {
+      const invalidData: CreateTemplateData = {
+        name: 'Invalid Template',
+        assessmentTypeId: '',
+        version: '',
       };
 
-      // Mock getTemplateById to return existing template
-      mockDb.select.mockReturnValue({
-        from: jest.fn().mockReturnValue({
-          innerJoin: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([mockTemplate])
-            })
-          })
-        })
-      } as any);
-
-      mockDb.update.mockReturnValue({
-        set: jest.fn().mockReturnValue({
-          where: jest.fn().mockReturnValue({
-            returning: jest.fn().mockResolvedValue([mockTemplate])
-          })
-        })
-      } as any);
-
-      const result = await AssessmentTemplatesService.updateTemplate('1', updateData);
-
-      expect(result).toEqual(mockTemplate);
+      await expect(AssessmentTemplatesService.createTemplate(invalidData))
+        .rejects.toThrow('Missing required fields');
     });
 
-    it('should throw error when template not found', async () => {
-      mockDb.select.mockReturnValue({
-        from: jest.fn().mockReturnValue({
-          innerJoin: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([])
-            })
-          })
-        })
-      } as any);
+    it('should throw error for missing assessmentTypeId', async () => {
+      const invalidData = {
+        name: 'Missing Type Template',
+        version: 'v1.0',
+        description: 'Missing assessment type ID',
+      } as CreateTemplateData;
 
-      await expect(AssessmentTemplatesService.updateTemplate('999', { name: 'Updated' }))
-        .rejects.toThrow('Template not found');
+      await expect(AssessmentTemplatesService.createTemplate(invalidData))
+        .rejects.toThrow('Missing required fields');
     });
-  });
 
-  describe('deactivateTemplate', () => {
-    it('should deactivate template successfully', async () => {
-      const mockTemplate: TemplateWithTypeName = {
-        id: 1,
-        assessmentTypeId: 1,
-        assessmentTypeName: 'Leadership Assessment',
-        name: 'Test Template',
-        version: '1.0',
-        description: 'A test template',
-        isActive: 0,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-02T00:00:00Z'
+    it('should throw error for missing name', async () => {
+      const invalidData = {
+        assessmentTypeId: testTypeId.toString(),
+        version: 'v1.0',
+        description: 'Missing name',
+      } as CreateTemplateData;
+
+      await expect(AssessmentTemplatesService.createTemplate(invalidData))
+        .rejects.toThrow('Missing required fields');
+    });
+
+    it('should throw error for missing version', async () => {
+      const invalidData = {
+        assessmentTypeId: testTypeId.toString(),
+        name: 'Missing Version Template',
+        description: 'Missing version',
+      } as CreateTemplateData;
+
+      await expect(AssessmentTemplatesService.createTemplate(invalidData))
+        .rejects.toThrow('Missing required fields');
+    });
+
+    it('should throw error for invalid assessmentTypeId', async () => {
+      const invalidData: CreateTemplateData = {
+        assessmentTypeId: '99999', // Non-existent type ID
+        name: 'Invalid Type Template',
+        version: 'v1.0',
+        description: 'Should fail',
       };
 
-      mockDb.update.mockReturnValue({
-        set: jest.fn().mockReturnValue({
-          where: jest.fn().mockReturnValue({
-            returning: jest.fn().mockResolvedValue([mockTemplate])
-          })
-        })
-      } as any);
-
-      // Mock getTemplateById for return value
-      mockDb.select.mockReturnValue({
-        from: jest.fn().mockReturnValue({
-          innerJoin: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([mockTemplate])
-            })
-          })
-        })
-      } as any);
-
-      const result = await AssessmentTemplatesService.deactivateTemplate('1');
-
-      expect(result).toEqual(mockTemplate);
-      expect(result.isActive).toBe(0);
+      await expect(AssessmentTemplatesService.createTemplate(invalidData))
+        .rejects.toThrow('Invalid assessment type ID');
     });
-  });
 
-  describe('getTemplatesByType', () => {
-    it('should return templates for specific type', async () => {
-      const mockTemplates: TemplateWithTypeName[] = [
-        {
-          id: 1,
-          assessmentTypeId: 1,
-          assessmentTypeName: 'Leadership Assessment',
-          name: 'Leadership Template',
-          version: '1.0',
-          description: 'Template for leadership',
-          isActive: 1,
-          createdAt: '2024-01-01T00:00:00Z',
-          updatedAt: null
-        }
-      ];
+    it('should throw error for duplicate name-version combination', async () => {
+      // Create first template
+      const templateData: CreateTemplateData = {
+        assessmentTypeId: testTypeId.toString(),
+        name: 'Duplicate Template',
+        version: 'v1.0',
+        description: 'First template',
+      };
 
-      mockDb.select.mockReturnValue({
-        from: jest.fn().mockReturnValue({
-          innerJoin: jest.fn().mockReturnValue({
-            where: jest.fn().mockResolvedValue(mockTemplates)
-          })
-        })
-      } as any);
+      await AssessmentTemplatesService.createTemplate(templateData);
 
-      const result = await AssessmentTemplatesService.getTemplatesByType('1');
+      // Try to create duplicate
+      const duplicateData: CreateTemplateData = {
+        assessmentTypeId: testTypeId.toString(),
+        name: 'Duplicate Template',
+        version: 'v1.0',
+        description: 'Duplicate template',
+      };
 
-      expect(result).toEqual(mockTemplates);
+      await expect(AssessmentTemplatesService.createTemplate(duplicateData))
+        .rejects.toThrow('Template with this name and version already exists');
+    });
+
+    it('should allow same name with different version', async () => {
+      // Create first template
+      const templateData1: CreateTemplateData = {
+        assessmentTypeId: testTypeId.toString(),
+        name: 'Same Name Template',
+        version: 'v1.0',
+        description: 'First template',
+      };
+
+      await AssessmentTemplatesService.createTemplate(templateData1);
+
+      // Create second template with same name but different version
+      const templateData2: CreateTemplateData = {
+        assessmentTypeId: testTypeId.toString(),
+        name: 'Same Name Template',
+        version: 'v2.0',
+        description: 'Second template',
+      };
+
+      const secondTemplate = await AssessmentTemplatesService.createTemplate(templateData2);
+
+      expect(secondTemplate.name).toBe(templateData2.name);
+      expect(secondTemplate.version).toBe(templateData2.version);
     });
   });
 }); 

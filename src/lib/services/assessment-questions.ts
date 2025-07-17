@@ -1,5 +1,5 @@
-import { db, assessmentQuestions, assessmentCategories, assessmentTemplates } from '@/lib/db';
-import { eq, and } from 'drizzle-orm';
+import { db, assessmentQuestions, assessmentTemplates, assessmentCategories } from '@/lib/db';
+import { eq, and, ne } from 'drizzle-orm';
 import { logger } from '@/lib/logger';
 
 export interface AssessmentQuestionData {
@@ -52,7 +52,7 @@ export class AssessmentQuestionsService {
         isActive: 1,
       }).returning();
 
-      return { ...question, createdAt: question.createdAt || '' };
+      return { ...question, createdAt: question.createdAt || '', isActive: question.isActive || 1 };
     } catch (error) {
       logger.dbError('create assessment question', error as Error, data);
       throw error;
@@ -63,7 +63,7 @@ export class AssessmentQuestionsService {
     try {
       const [question] = await db.select().from(assessmentQuestions).where(eq(assessmentQuestions.id, id)).limit(1);
       if (!question) return null;
-      return { ...question, createdAt: question.createdAt || '' };
+      return { ...question, createdAt: question.createdAt || '', isActive: question.isActive || 1 };
     } catch (error) {
       logger.dbError('fetch assessment question by id', error as Error, { id });
       throw error;
@@ -80,7 +80,7 @@ export class AssessmentQuestionsService {
         ))
         .orderBy(assessmentQuestions.displayOrder);
       
-      return questions.map(question => ({ ...question, createdAt: question.createdAt || '' }));
+      return questions.map(question => ({ ...question, createdAt: question.createdAt || '', isActive: question.isActive || 1 }));
     } catch (error) {
       logger.dbError('fetch questions by template', error as Error, { templateId });
       throw error;
@@ -97,7 +97,7 @@ export class AssessmentQuestionsService {
         ))
         .orderBy(assessmentQuestions.displayOrder);
       
-      return questions.map(question => ({ ...question, createdAt: question.createdAt || '' }));
+      return questions.map(question => ({ ...question, createdAt: question.createdAt || '', isActive: question.isActive || 1 }));
     } catch (error) {
       logger.dbError('fetch questions by category', error as Error, { categoryId });
       throw error;
@@ -115,7 +115,7 @@ export class AssessmentQuestionsService {
           .where(and(
             eq(assessmentQuestions.templateId, existing.templateId),
             eq(assessmentQuestions.questionText, data.questionText),
-            eq(assessmentQuestions.id, id).not()
+            ne(assessmentQuestions.id, id)
           ))
           .limit(1);
         if (duplicate.length > 0) throw new Error('Question with this text already exists in this template');
@@ -132,7 +132,7 @@ export class AssessmentQuestionsService {
         .returning();
 
       if (!updated) throw new Error('Failed to update assessment question');
-      return { ...updated, createdAt: updated.createdAt || '' };
+      return { ...updated, createdAt: updated.createdAt || '', isActive: updated.isActive || 1 };
     } catch (error) {
       logger.dbError('update assessment question', error as Error, { id, data });
       throw error;
@@ -156,7 +156,7 @@ export class AssessmentQuestionsService {
         .returning();
 
       if (!deactivated) throw new Error('Assessment question not found');
-      return { ...deactivated, createdAt: deactivated.createdAt || '' };
+      return { ...deactivated, createdAt: deactivated.createdAt || '', isActive: deactivated.isActive || 0 };
     } catch (error) {
       logger.dbError('deactivate assessment question', error as Error, { id });
       throw error;
@@ -195,7 +195,7 @@ export class AssessmentQuestionsService {
           displayOrder: question.displayOrder,
           isActive: 1,
         }).returning();
-        newQuestions.push({ ...newQuestion, createdAt: newQuestion.createdAt || '' });
+        newQuestions.push({ ...newQuestion, createdAt: newQuestion.createdAt || '', isActive: newQuestion.isActive || 1 });
       }
 
       return newQuestions;

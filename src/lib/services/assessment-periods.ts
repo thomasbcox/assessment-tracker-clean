@@ -1,5 +1,5 @@
 import { db, assessmentPeriods } from '@/lib/db';
-import { eq, desc, asc, lt, gt, or, and, not } from 'drizzle-orm';
+import { eq, desc, asc, lt, gt, or, and, ne } from 'drizzle-orm';
 import { logger } from '@/lib/logger';
 
 export interface AssessmentPeriodData {
@@ -123,7 +123,7 @@ export class AssessmentPeriodsService {
                   gt(assessmentPeriods.endDate, startDate)
                 )
               ),
-              eq(assessmentPeriods.id, id).not()
+              ne(assessmentPeriods.id, id)
             )
           );
         if (overlapping.length > 0) throw new Error('Period overlaps with existing periods');
@@ -145,7 +145,7 @@ export class AssessmentPeriodsService {
         .returning();
 
       if (!updated) throw new Error('Failed to update assessment period');
-      return { ...updated, createdAt: updated.createdAt || '' };
+      return { ...updated, createdAt: updated.createdAt || '', isActive: updated.isActive || 0 };
     } catch (error) {
       logger.dbError('update assessment period', error as Error, { id, data });
       throw error;
@@ -173,7 +173,7 @@ export class AssessmentPeriodsService {
         .returning();
 
       if (!activated) throw new Error('Assessment period not found');
-      return { ...activated, createdAt: activated.createdAt || '' };
+      return { ...activated, createdAt: activated.createdAt || '', isActive: activated.isActive || 1 };
     } catch (error) {
       logger.dbError('set active assessment period', error as Error, { id });
       throw error;

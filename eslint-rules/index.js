@@ -6,6 +6,7 @@ const noFrameworkObjectsInServices = require('./no-framework-objects-in-services
 const noJsonInTests = require('./no-json-in-tests');
 const validateTestInputs = require('./validate-test-inputs');
 const restrictApiRouteImports = require('./restrict-api-route-imports');
+const noDbMockingInServiceTests = require('./no-db-mocking-in-service-tests');
 
 module.exports = {
   rules: {
@@ -13,7 +14,8 @@ module.exports = {
     'no-framework-objects-in-services': noFrameworkObjectsInServices,
     'no-json-in-tests': noJsonInTests,
     'validate-test-inputs': validateTestInputs,
-    'restrict-api-route-imports': restrictApiRouteImports
+    'restrict-api-route-imports': restrictApiRouteImports,
+    'no-db-mocking-in-service-tests': noDbMockingInServiceTests
   },
   
   configs: {
@@ -23,7 +25,8 @@ module.exports = {
         'assessment-tracker/no-framework-objects-in-services': 'error',
         'assessment-tracker/no-json-in-tests': 'warn',
         'assessment-tracker/validate-test-inputs': 'warn',
-        'assessment-tracker/restrict-api-route-imports': 'error'
+        'assessment-tracker/restrict-api-route-imports': 'error',
+        'assessment-tracker/no-db-mocking-in-service-tests': 'error'
       }
     }
   }

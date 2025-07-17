@@ -1,5 +1,5 @@
 import { drizzle } from 'drizzle-orm/better-sqlite3';
-import Database from 'better-sqlite3';
+const Database = require('better-sqlite3');
 import { sql } from 'drizzle-orm';
 import {
   sqliteTable,
@@ -119,6 +119,8 @@ export const invitations = sqliteTable('invitations', {
   expiresAt: text('expires_at').notNull(),
   reminderCount: integer('reminder_count').default(0),
   lastReminderSent: text('last_reminder_sent'),
+  invitedRole: text('invited_role').notNull().default('user'),
+  dueDate: text('due_date'),
 });
 
 export const magicLinks = sqliteTable('magic_links', {

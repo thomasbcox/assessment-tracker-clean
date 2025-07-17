@@ -1,5 +1,5 @@
 import { db, assessmentCategories, assessmentTypes } from '@/lib/db';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, ne } from 'drizzle-orm';
 import { logger } from '@/lib/logger';
 
 export interface AssessmentCategoryData {
@@ -48,7 +48,7 @@ export class AssessmentCategoriesService {
         isActive: 1,
       }).returning();
 
-      return { ...category, createdAt: category.createdAt || '' };
+      return { ...category, createdAt: category.createdAt || '', isActive: category.isActive || 1 };
     } catch (error) {
       logger.dbError('create assessment category', error as Error, data);
       throw error;
@@ -59,9 +59,23 @@ export class AssessmentCategoriesService {
     try {
       const [category] = await db.select().from(assessmentCategories).where(eq(assessmentCategories.id, id)).limit(1);
       if (!category) return null;
-      return { ...category, createdAt: category.createdAt || '' };
+      return { ...category, createdAt: category.createdAt || '', isActive: category.isActive || 1 };
     } catch (error) {
       logger.dbError('fetch assessment category by id', error as Error, { id });
+      throw error;
+    }
+  }
+
+  static async getActiveCategories(): Promise<AssessmentCategory[]> {
+    try {
+      const categories = await db.select()
+        .from(assessmentCategories)
+        .where(eq(assessmentCategories.isActive, 1))
+        .orderBy(assessmentCategories.displayOrder);
+      
+      return categories.map(category => ({ ...category, createdAt: category.createdAt || '', isActive: category.isActive || 1 }));
+    } catch (error) {
+      logger.dbError('fetch active categories', error as Error);
       throw error;
     }
   }
@@ -76,7 +90,7 @@ export class AssessmentCategoriesService {
         ))
         .orderBy(assessmentCategories.displayOrder);
       
-      return categories.map(category => ({ ...category, createdAt: category.createdAt || '' }));
+      return categories.map(category => ({ ...category, createdAt: category.createdAt || '', isActive: category.isActive || 1 }));
     } catch (error) {
       logger.dbError('fetch categories by type', error as Error, { assessmentTypeId });
       throw error;
@@ -94,7 +108,7 @@ export class AssessmentCategoriesService {
           .where(and(
             eq(assessmentCategories.assessmentTypeId, existing.assessmentTypeId),
             eq(assessmentCategories.name, data.name),
-            eq(assessmentCategories.id, id).not()
+            ne(assessmentCategories.id, id)
           ))
           .limit(1);
         if (duplicate.length > 0) throw new Error('Category with this name already exists for this assessment type');
@@ -110,7 +124,7 @@ export class AssessmentCategoriesService {
         .returning();
 
       if (!updated) throw new Error('Failed to update assessment category');
-      return { ...updated, createdAt: updated.createdAt || '' };
+      return { ...updated, createdAt: updated.createdAt || '', isActive: updated.isActive || 1 };
     } catch (error) {
       logger.dbError('update assessment category', error as Error, { id, data });
       throw error;
@@ -134,7 +148,7 @@ export class AssessmentCategoriesService {
         .returning();
 
       if (!deactivated) throw new Error('Assessment category not found');
-      return { ...deactivated, createdAt: deactivated.createdAt || '' };
+      return { ...deactivated, createdAt: deactivated.createdAt || '', isActive: deactivated.isActive || 0 };
     } catch (error) {
       logger.dbError('deactivate assessment category', error as Error, { id });
       throw error;

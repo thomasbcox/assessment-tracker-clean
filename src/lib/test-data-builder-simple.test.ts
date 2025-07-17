@@ -151,6 +151,8 @@ describe('SimpleTestDataBuilder', () => {
         expires_at TEXT NOT NULL,
         reminder_count INTEGER DEFAULT 0,
         last_reminder_sent TEXT,
+        invited_role TEXT NOT NULL DEFAULT 'user',
+        due_date TEXT,
         FOREIGN KEY (manager_id) REFERENCES users(id),
         FOREIGN KEY (template_id) REFERENCES assessment_templates(id),
         FOREIGN KEY (period_id) REFERENCES assessment_periods(id)
@@ -265,22 +267,50 @@ describe('SimpleTestDataBuilder', () => {
 
     it('should create assessment instance with all required dependencies', async () => {
       const builder = createSimpleTestDataBuilder(db);
-      const result = await builder.create({
-        assessmentInstance: {
-          status: 'in_progress',
-        },
-      });
+      
+      // Add debugging to see what's happening
+      console.log('🔍 Starting assessment instance creation...');
+      
+      try {
+        const result = await builder.create({
+          assessmentInstance: {
+            status: 'in_progress',
+          },
+        });
 
-      expect(result.user).toBeDefined();
-      expect(result.assessmentPeriod).toBeDefined();
-      expect(result.assessmentType).toBeDefined();
-      expect(result.assessmentTemplate).toBeDefined();
-      expect(result.assessmentInstance).toBeDefined();
+        console.log('✅ Assessment instance created successfully');
+        console.log('Result:', JSON.stringify(result, null, 2));
 
-      expect(result.assessmentInstance!.userId).toBe(result.user!.id);
-      expect(result.assessmentInstance!.periodId).toBe(result.assessmentPeriod!.id);
-      expect(result.assessmentInstance!.templateId).toBe(result.assessmentTemplate!.id);
-      expect(result.assessmentInstance!.status).toBe('in_progress');
+        expect(result.user).toBeDefined();
+        expect(result.assessmentPeriod).toBeDefined();
+        expect(result.assessmentType).toBeDefined();
+        expect(result.assessmentTemplate).toBeDefined();
+        expect(result.assessmentInstance).toBeDefined();
+
+        expect(result.assessmentInstance!.userId).toBe(result.user!.id);
+        expect(result.assessmentInstance!.periodId).toBe(result.assessmentPeriod!.id);
+        expect(result.assessmentInstance!.templateId).toBe(result.assessmentTemplate!.id);
+        expect(result.assessmentInstance!.status).toBe('in_progress');
+      } catch (error) {
+        console.error('❌ Error creating assessment instance:', error);
+        
+        // Let's check what's in the database
+        console.log('🔍 Checking database contents...');
+        
+        const allUsers = await db.select().from(users);
+        console.log('Users in DB:', allUsers);
+        
+        const allTypes = await db.select().from(assessmentTypes);
+        console.log('Assessment Types in DB:', allTypes);
+        
+        const allPeriods = await db.select().from(assessmentPeriods);
+        console.log('Assessment Periods in DB:', allPeriods);
+        
+        const allTemplates = await db.select().from(assessmentTemplates);
+        console.log('Assessment Templates in DB:', allTemplates);
+        
+        throw error;
+      }
     });
   });
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AssessmentTemplatesService } from '@/lib/assessment-templates.service';
+import { AssessmentTemplatesService } from '@/lib/services/assessment-templates';
 import { ServiceError } from '@/lib/types/service-interfaces';
 
 export async function GET(

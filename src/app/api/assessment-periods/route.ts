@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAssessmentPeriods, createAssessmentPeriod, validatePeriodData } from '@/lib/services/assessment-periods';
+import { AssessmentPeriodsService } from '@/lib/services/assessment-periods';
 
 export async function GET(request: NextRequest) {
   try {
-    const periods = await getAssessmentPeriods();
+    const periods = await AssessmentPeriodsService.getAllPeriods();
     return NextResponse.json(periods);
   } catch (error) {
     return NextResponse.json(
@@ -16,16 +16,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const validation = validatePeriodData(body);
     
-    if (!validation.isValid) {
+    // Validate required fields
+    if (!body.name || !body.startDate || !body.endDate) {
       return NextResponse.json(
-        { error: validation.error },
+        { error: 'Name, start date, and end date are required' },
         { status: 400 }
       );
     }
 
-    const newPeriod = await createAssessmentPeriod({
+    const newPeriod = await AssessmentPeriodsService.createPeriod({
       name: body.name,
       startDate: body.startDate,
       endDate: body.endDate,

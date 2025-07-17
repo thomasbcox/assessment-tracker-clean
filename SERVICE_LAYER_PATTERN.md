@@ -228,6 +228,12 @@ export async function PUT(
 
 ## Testing Strategy
 
+### Service Layer Test Policy: No Database Mocking
+
+All service layer tests must use a real in-memory SQLite database and the test data builder system. Mocking the database or ORM (e.g., jest.mock('@/lib/db'), jest.mock('drizzle-orm')) is strictly forbidden and enforced by ESLint. This ensures true integration coverage and prevents false positives/negatives from mocks.
+
+- See [TESTING.md](TESTING.md) for details and rationale.
+
 ### Service Testing
 ```typescript
 // Test service methods directly

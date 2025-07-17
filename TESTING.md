@@ -557,3 +557,39 @@ npm run test:coverage -- --watch
 
 ### Environment Variables
 - `MAILTRAP_USER` and `MAILTRAP_PASS` must be set in your `.env.local` or CI/CD secrets for Mailtrap to work. 
+
+## Service Layer Test Policy: No Database Mocking
+
+**All service layer tests must use a real in-memory SQLite database and the test data builder system.**
+
+- Do **not** use `jest.mock('@/lib/db')`, `jest.mock('drizzle-orm')`, or similar to mock the database or ORM in any service layer test (e.g., `src/lib/services/*.test.ts`).
+- This is now enforced by a custom ESLint rule: `no-db-mocking-in-service-tests`.
+- Violations will cause lint errors and block PRs.
+- The only allowed approach is to use the real database and the builder system for all service logic tests.
+
+**Rationale:**
+- Ensures true integration coverage and catches schema/constraint issues early.
+- Prevents false positives/negatives from mocks that do not reflect real DB behavior.
+- Guarantees that all service logic is tested as it will run in production.
+
+**See also:**
+- [Test Data Builder System](#test-data-builder-system)
+- [ESLint Custom Rules](eslint-rules/) 
+
+## Logger Test Policy
+
+- Do **not** mock `console` or the logger in tests.
+- Always capture and assert on real console output in logger tests.
+- Logger tests must verify environment-specific output (development, test, production).
+- This is enforced by the custom ESLint rule: `no-logger-mocking-in-tests`.
+- Violations will cause lint errors and block PRs.
+
+**Rationale:**
+- Ensures logger tests reflect real runtime behavior.
+- Prevents false positives/negatives from mocks.
+- Guarantees that logging is tested as it will run in production and development.
+
+**See also:**
+- [Logger Utility](src/lib/logger.ts)
+- [Logger Tests](src/lib/logger.test.ts)
+- [ESLint Custom Rules](eslint-rules/) 

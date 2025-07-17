@@ -9,7 +9,10 @@ interface LogEntry {
 }
 
 class Logger {
-  private isDevelopment = process.env.NODE_ENV === 'development';
+  // BLESSED PATTERN: Check environment dynamically, not at instantiation
+  private get isDevelopment(): boolean {
+    return process.env.NODE_ENV === 'development';
+  }
 
   private formatMessage(level: LogLevel, message: string, data?: any, error?: Error): LogEntry {
     return {
@@ -24,19 +27,43 @@ class Logger {
   private log(level: LogLevel, message: string, data?: any, error?: Error) {
     const entry = this.formatMessage(level, message, data, error);
     
+    // BLESSED PATTERN: Check environment dynamically in each log call
     if (this.isDevelopment) {
       const consoleMethod = level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log';
-      console[consoleMethod](`[${entry.timestamp}] ${level.toUpperCase()}: ${message}`, data || '', error || '');
+      let logLine = `[${entry.timestamp}] ${level.toUpperCase()}: ${message}`;
+      if (
+        data !== undefined &&
+        data !== null &&
+        !(typeof data === 'object' && Object.keys(data).length === 0)
+      ) {
+        logLine += ` ${JSON.stringify(data)}`;
+      }
+      if (error) {
+        logLine += ' ' + (error.stack || error.toString());
+      }
+      console[consoleMethod](logLine);
     } else {
       // In production, you might want to send logs to a service like Sentry, LogRocket, etc.
       // For now, we'll just use console
       if (level === 'error' || level === 'warn') {
-        console[level](`[${entry.timestamp}] ${level.toUpperCase()}: ${message}`, data || '', error || '');
+        let logLine = `[${entry.timestamp}] ${level.toUpperCase()}: ${message}`;
+        if (
+          data !== undefined &&
+          data !== null &&
+          !(typeof data === 'object' && Object.keys(data).length === 0)
+        ) {
+          logLine += ` ${JSON.stringify(data)}`;
+        }
+        if (error) {
+          logLine += ' ' + (error.stack || error.toString());
+        }
+        console[level](logLine);
       }
     }
   }
 
   debug(message: string, data?: any) {
+    // BLESSED PATTERN: Check environment dynamically
     if (this.isDevelopment) {
       this.log('debug', message, data);
     }
@@ -46,12 +73,20 @@ class Logger {
     this.log('info', message, data);
   }
 
-  warn(message: string, data?: any, error?: Error) {
-    this.log('warn', message, data, error);
+  error(message: string, dataOrError?: any, error?: Error) {
+    if (dataOrError instanceof Error && !error) {
+      this.log('error', message, undefined, dataOrError);
+    } else {
+      this.log('error', message, dataOrError, error);
+    }
   }
 
-  error(message: string, data?: any, error?: Error) {
-    this.log('error', message, data, error);
+  warn(message: string, dataOrError?: any, error?: Error) {
+    if (dataOrError instanceof Error && !error) {
+      this.log('warn', message, undefined, dataOrError);
+    } else {
+      this.log('warn', message, dataOrError, error);
+    }
   }
 
   // Convenience method for API errors

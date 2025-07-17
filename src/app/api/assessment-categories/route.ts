@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getActiveAssessmentCategories, createAssessmentCategory, validateCategoryData } from '@/lib/services/assessment-categories';
+import { AssessmentCategoriesService } from '@/lib/services/assessment-categories';
 
 export async function GET(request: NextRequest) {
   try {
-    const categories = await getActiveAssessmentCategories();
+    const categories = await AssessmentCategoriesService.getActiveCategories();
     return NextResponse.json(categories);
   } catch (error) {
     return NextResponse.json(
@@ -16,16 +16,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const validation = validateCategoryData(body);
     
-    if (!validation.isValid) {
+    // Validate required fields
+    if (!body.assessmentTypeId || !body.name || body.displayOrder === undefined) {
       return NextResponse.json(
-        { error: validation.error },
+        { error: 'Assessment type ID, name, and display order are required' },
         { status: 400 }
       );
     }
 
-    const newCategory = await createAssessmentCategory({
+    const newCategory = await AssessmentCategoriesService.createCategory({
       assessmentTypeId: parseInt(body.assessmentTypeId),
       name: body.name,
       description: body.description,

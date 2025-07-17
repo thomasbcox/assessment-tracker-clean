@@ -633,8 +633,12 @@ export class TestDataBuilder {
       if (config.user.email) userBuilder.withEmail(config.user.email);
       if (config.user.firstName) userBuilder.withFirstName(config.user.firstName);
       if (config.user.lastName) userBuilder.withLastName(config.user.lastName);
-      if (config.user.role) userBuilder.withRole(config.user.role);
-      if (config.user.isActive !== undefined) userBuilder.withIsActive(config.user.isActive);
+      if (config.user.role && ['user', 'manager', 'admin', 'superadmin'].includes(config.user.role)) {
+        userBuilder.withRole(config.user.role as 'user' | 'manager' | 'admin' | 'superadmin');
+      }
+      if (config.user.isActive !== undefined && config.user.isActive !== null) {
+        userBuilder.withIsActive(config.user.isActive);
+      }
       this.result.user = await userBuilder.create(this.db);
     }
 
@@ -696,7 +700,9 @@ export class TestDataBuilder {
         .withUserId(this.result.user.id)
         .withPeriodId(this.result.assessmentPeriod.id)
         .withTemplateId(this.result.assessmentTemplate.id)
-        .withStatus(config.assessmentInstance.status || 'pending')
+        .withStatus((config.assessmentInstance.status && ['pending', 'in_progress', 'completed', 'cancelled'].includes(config.assessmentInstance.status)) 
+          ? config.assessmentInstance.status as 'pending' | 'in_progress' | 'completed' | 'cancelled'
+          : 'pending')
         .create(this.db);
     }
 
@@ -806,7 +812,7 @@ export class TestDataBuilder {
         .withInstanceId(this.result.assessmentInstance.id)
         .withQuestionId(this.result.assessmentQuestion.id)
         .withScore(config.assessmentResponse.score ?? 5)
-        .withNotes(config.assessmentResponse.notes)
+        .withNotes(config.assessmentResponse.notes || 'Test response notes')
         .create(this.db);
     }
 
@@ -879,19 +885,4 @@ export function createTestDataBuilder(db: ReturnType<typeof drizzle>): TestDataB
 
 export function createDatabaseCleanup(db: ReturnType<typeof drizzle>): DatabaseCleanup {
   return new DatabaseCleanup(db);
-}
-
-// Export all builders for individual use
-export {
-  UserBuilder,
-  AssessmentTypeBuilder,
-  AssessmentPeriodBuilder,
-  AssessmentCategoryBuilder,
-  AssessmentTemplateBuilder,
-  AssessmentInstanceBuilder,
-  AssessmentQuestionBuilder,
-  AssessmentResponseBuilder,
-  ManagerRelationshipBuilder,
-  InvitationBuilder,
-  MagicLinkBuilder,
-}; 
+} 

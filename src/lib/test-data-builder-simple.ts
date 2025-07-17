@@ -68,6 +68,9 @@ export interface TestDataResult {
   magicLink?: MagicLink;
 }
 
+// Add a static global counter for uniqueness
+let globalTestDataCounter = 1;
+
 export class SimpleTestDataBuilder {
   private db: ReturnType<typeof drizzle>;
   private result: TestDataResult = {};
@@ -78,15 +81,15 @@ export class SimpleTestDataBuilder {
   }
 
   private getUniqueId(): number {
-    return this.counter++;
+    return globalTestDataCounter++;
   }
 
   private getUniqueString(prefix: string): string {
-    return `${prefix}-${Date.now()}-${this.getUniqueId()}`;
+    return `${prefix}_${Date.now()}_${globalTestDataCounter++}`;
   }
 
   private getUniqueEmail(): string {
-    return `test-${Date.now()}-${this.getUniqueId()}@example.com`;
+    return `user_${Date.now()}_${globalTestDataCounter++}@example.com`;
   }
 
   async create(config: TestDataConfig = {}): Promise<TestDataResult> {
@@ -151,7 +154,7 @@ export class SimpleTestDataBuilder {
       }
 
       const categoryData: NewAssessmentCategory = {
-        assessmentTypeId: this.result.assessmentType.id,
+        assessmentTypeId: this.result.assessmentType!.id,
         name: config.assessmentCategory.name || `Category ${this.getUniqueId()}`,
         description: config.assessmentCategory.description || 'Test category',
         displayOrder: config.assessmentCategory.displayOrder ?? this.getUniqueId(),
@@ -174,7 +177,7 @@ export class SimpleTestDataBuilder {
       }
 
       const templateData: NewAssessmentTemplate = {
-        assessmentTypeId: this.result.assessmentType.id,
+        assessmentTypeId: this.result.assessmentType!.id,
         name: config.assessmentTemplate.name || `Template ${this.getUniqueId()}`,
         version: config.assessmentTemplate.version || '1.0',
         description: config.assessmentTemplate.description || 'Test template',
@@ -184,6 +187,7 @@ export class SimpleTestDataBuilder {
       this.result.assessmentTemplate = template;
     }
 
+    // Group 2: Tables with foreign keys to Group 1
     if (config.assessmentInstance) {
       if (!this.result.user) {
         const userData: NewUser = {
@@ -222,7 +226,7 @@ export class SimpleTestDataBuilder {
         }
 
         const templateData: NewAssessmentTemplate = {
-          assessmentTypeId: this.result.assessmentType.id,
+          assessmentTypeId: this.result.assessmentType!.id,
           name: `Template ${this.getUniqueId()}`,
           version: '1.0',
           description: 'Test template',
@@ -260,7 +264,7 @@ export class SimpleTestDataBuilder {
         }
 
         const templateData: NewAssessmentTemplate = {
-          assessmentTypeId: this.result.assessmentType.id,
+          assessmentTypeId: this.result.assessmentType!.id,
           name: `Template ${this.getUniqueId()}`,
           version: '1.0',
           description: 'Test template',
@@ -271,6 +275,17 @@ export class SimpleTestDataBuilder {
       }
 
       if (!this.result.assessmentCategory) {
+        if (!this.result.assessmentType) {
+          const typeData: NewAssessmentType = {
+            name: `Assessment Type ${this.getUniqueId()}`,
+            description: 'Test assessment type',
+            purpose: 'Testing purposes',
+            isActive: 1,
+          };
+          const [type] = await this.db.insert(assessmentTypes).values(typeData).returning();
+          this.result.assessmentType = type;
+        }
+
         const categoryData: NewAssessmentCategory = {
           assessmentTypeId: this.result.assessmentType!.id,
           name: `Category ${this.getUniqueId()}`,
@@ -365,7 +380,7 @@ export class SimpleTestDataBuilder {
         }
 
         const templateData: NewAssessmentTemplate = {
-          assessmentTypeId: this.result.assessmentType.id,
+          assessmentTypeId: this.result.assessmentType!.id,
           name: `Template ${this.getUniqueId()}`,
           version: '1.0',
           description: 'Test template',
@@ -443,7 +458,7 @@ export class SimpleTestDataBuilder {
           }
 
           const templateData: NewAssessmentTemplate = {
-            assessmentTypeId: this.result.assessmentType.id,
+            assessmentTypeId: this.result.assessmentType!.id,
             name: `Template ${this.getUniqueId()}`,
             version: '1.0',
             description: 'Test template',
@@ -457,7 +472,7 @@ export class SimpleTestDataBuilder {
           userId: this.result.user.id,
           periodId: this.result.assessmentPeriod.id,
           templateId: this.result.assessmentTemplate.id,
-          status: 'pending',
+          status: 'in_progress',
         };
         const [instance] = await this.db.insert(assessmentInstances).values(instanceData).returning();
         this.result.assessmentInstance = instance;
@@ -477,7 +492,7 @@ export class SimpleTestDataBuilder {
           }
 
           const templateData: NewAssessmentTemplate = {
-            assessmentTypeId: this.result.assessmentType.id,
+            assessmentTypeId: this.result.assessmentType!.id,
             name: `Template ${this.getUniqueId()}`,
             version: '1.0',
             description: 'Test template',
@@ -513,7 +528,7 @@ export class SimpleTestDataBuilder {
       const responseData: NewAssessmentResponse = {
         instanceId: this.result.assessmentInstance.id,
         questionId: this.result.assessmentQuestion.id,
-        score: config.assessmentResponse.score ?? 5,
+        score: config.assessmentResponse.score || 5,
         notes: config.assessmentResponse.notes,
       };
       const [response] = await this.db.insert(assessmentResponses).values(responseData).returning();
@@ -543,24 +558,18 @@ export class SimpleDatabaseCleanup {
    * Truncate all tables in dependency-aware order (reverse of creation order)
    */
   async truncateAll(): Promise<void> {
-    // Group 4: Tables with foreign keys to Group 3
-    await this.db.delete(assessmentResponses);
-    
-    // Group 3: Tables with foreign keys to Group 2
-    await this.db.delete(assessmentQuestions);
-    await this.db.delete(managerRelationships);
-    await this.db.delete(invitations);
-    
-    // Group 2: Tables with foreign keys to Group 1
-    await this.db.delete(assessmentCategories);
-    await this.db.delete(assessmentTemplates);
-    await this.db.delete(assessmentInstances);
-    await this.db.delete(magicLinks);
-    
-    // Group 1: Dimension tables (no foreign keys)
-    await this.db.delete(assessmentPeriods);
-    await this.db.delete(assessmentTypes);
-    await this.db.delete(users);
+    // Use raw SQL to properly handle foreign key constraints
+    await this.db.run('DELETE FROM assessment_responses');
+    await this.db.run('DELETE FROM assessment_questions');
+    await this.db.run('DELETE FROM manager_relationships');
+    await this.db.run('DELETE FROM invitations');
+    await this.db.run('DELETE FROM assessment_instances'); // moved up before templates
+    await this.db.run('DELETE FROM assessment_categories');
+    await this.db.run('DELETE FROM assessment_templates');
+    await this.db.run('DELETE FROM magic_links');
+    await this.db.run('DELETE FROM assessment_periods');
+    await this.db.run('DELETE FROM assessment_types');
+    await this.db.run('DELETE FROM users');
   }
 
   /**
@@ -576,6 +585,7 @@ export class SimpleDatabaseCleanup {
   async reset(): Promise<void> {
     await this.truncateAll();
     await this.resetCounters();
+    globalTestDataCounter = 1;
   }
 }
 

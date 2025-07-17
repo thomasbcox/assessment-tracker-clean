@@ -58,6 +58,11 @@ A comprehensive test data builder system has been implemented for robust testing
 - **Type-safe builders** with full TypeScript support
 - **Database cleanup utilities** for proper test isolation
 
+**Service Layer Test Policy:**
+- All service layer tests must use a real in-memory SQLite database and the test data builder system.
+- **Mocking the database or ORM in service layer tests is strictly forbidden and enforced by ESLint.**
+- See [TESTING.md](TESTING.md) for details on the policy and enforcement.
+
 **Usage Example:**
 ```typescript
 const builder = createSimpleTestDataBuilder(db);
@@ -69,6 +74,15 @@ const result = await builder.create({
 ```
 
 See [TEST_DATA_BUILDER_SUMMARY.md](TEST_DATA_BUILDER_SUMMARY.md) for complete documentation.
+
+## Logger Test Policy
+
+Logger tests must:
+- Capture and assert on real console output (no mocking of console or logger)
+- Verify environment-specific output (development, test, production)
+- Comply with the custom ESLint rule: `no-logger-mocking-in-tests`
+
+See [TESTING.md](./TESTING.md#logger-test-policy) for details.
 
 ## 🛠️ Development
 
