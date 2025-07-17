@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from '@/hooks/useSession';
+import { DashboardLayout } from '@/components/dashboard/dashboard-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
 import { Button } from '@/components/ui/button';
@@ -202,105 +203,106 @@ export default function BuilderPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Template Builder</h1>
-        <p className="text-muted-foreground">
-          Create and manage assessment categories, templates, and periods
-        </p>
-      </div>
+    <DashboardLayout>
+      <div className="container mx-auto p-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">Template Builder</h1>
+          <p className="text-muted-foreground">
+            Create and manage assessment categories, templates, and periods
+          </p>
+        </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="categories">Categories</TabsTrigger>
-          <TabsTrigger value="templates">Templates</TabsTrigger>
-          <TabsTrigger value="periods">Periods</TabsTrigger>
-        </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="categories">Categories</TabsTrigger>
+            <TabsTrigger value="templates">Templates</TabsTrigger>
+            <TabsTrigger value="periods">Periods</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="categories" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create New Category</CardTitle>
-              <CardDescription>
-                Add a new category to an assessment type
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleCreateCategory} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="assessmentType" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Assessment Type</label>
-                    <select 
-                      id="assessmentType"
-                      value={newCategory.assessmentTypeId} 
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setNewCategory(prev => ({ ...prev, assessmentTypeId: e.target.value }))}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <option value="">Select assessment type</option>
-                      {assessmentTypes.map(type => (
-                        <option key={type.id} value={type.id.toString()}>
-                          {type.name}
-                        </option>
-                      ))}
-                    </select>
+          <TabsContent value="categories" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Create New Category</CardTitle>
+                <CardDescription>
+                  Add a new category to an assessment type
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleCreateCategory} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="assessmentType" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Assessment Type</label>
+                      <select 
+                        id="assessmentType"
+                        value={newCategory.assessmentTypeId} 
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setNewCategory(prev => ({ ...prev, assessmentTypeId: e.target.value }))}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <option value="">Select assessment type</option>
+                        {assessmentTypes.map(type => (
+                          <option key={type.id} value={type.id.toString()}>
+                            {type.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="displayOrder" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Display Order</label>
+                      <Input
+                        id="displayOrder"
+                        type="number"
+                        value={newCategory.displayOrder}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewCategory(prev => ({ ...prev, displayOrder: e.target.value }))}
+                        placeholder="1"
+                      />
+                    </div>
                   </div>
                   <div>
-                    <label htmlFor="displayOrder" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Display Order</label>
+                    <label htmlFor="categoryName" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Category Name</label>
                     <Input
-                      id="displayOrder"
-                      type="number"
-                      value={newCategory.displayOrder}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewCategory(prev => ({ ...prev, displayOrder: e.target.value }))}
-                      placeholder="1"
+                      id="categoryName"
+                      value={newCategory.name}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewCategory(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="e.g., Communication"
                     />
                   </div>
-                </div>
-                <div>
-                  <label htmlFor="categoryName" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Category Name</label>
-                  <Input
-                    id="categoryName"
-                    value={newCategory.name}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewCategory(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g., Communication"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="categoryDescription" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Description</label>
-                  <textarea
-                    id="categoryDescription"
-                    value={newCategory.description}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewCategory(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Describe what this category measures..."
-                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </div>
-                <Button type="submit" className="w-full">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Category
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+                  <div>
+                    <label htmlFor="categoryDescription" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Description</label>
+                    <textarea
+                      id="categoryDescription"
+                      value={newCategory.description}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewCategory(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Describe what this category measures..."
+                      className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                  <Button type="submit" className="w-full">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Category
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Existing Categories</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {assessmentTypes.map(type => (
-                  <div key={type.id} className="border rounded-lg p-4">
-                    <h3 className="font-semibold mb-2">{type.name}</h3>
-                    <div className="space-y-2">
-                      {categories
-                        .filter(cat => cat.assessmentTypeId === type.id)
-                        .sort((a, b) => a.displayOrder - b.displayOrder)
-                        .map(category => (
-                          <div key={category.id} className="flex items-center justify-between p-2 bg-muted rounded">
-                            <div>
-                              <div className="font-medium">{category.name}</div>
-                              <div className="text-sm text-muted-foreground">{category.description}</div>
-                            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Existing Categories</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {assessmentTypes.map(type => (
+                    <div key={type.id} className="border rounded-lg p-4">
+                      <h3 className="font-semibold mb-2">{type.name}</h3>
+                      <div className="space-y-2">
+                        {categories
+                          .filter(cat => cat.assessmentTypeId === type.id)
+                          .sort((a, b) => a.displayOrder - b.displayOrder)
+                          .map(category => (
+                            <div key={category.id} className="flex items-center justify-between p-2 bg-muted rounded">
+                              <div>
+                                <div className="font-medium">{category.name}</div>
+                                <div className="text-sm text-muted-foreground">{category.description}</div>
+                              </div>
                                                          <div className="flex items-center gap-2">
                                <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-secondary text-secondary-foreground">Order: {category.displayOrder}</span>
                                <Button size="sm" variant="ghost">
@@ -310,91 +312,91 @@ export default function BuilderPage() {
                                  <Trash2 className="w-4 h-4" />
                                </Button>
                              </div>
-                          </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="templates" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Create New Template</CardTitle>
+                <CardDescription>
+                  Create a new assessment template with versioning
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleCreateTemplate} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="templateAssessmentType" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Assessment Type</label>
+                      <select 
+                        id="templateAssessmentType"
+                        value={newTemplate.assessmentTypeId} 
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setNewTemplate(prev => ({ ...prev, assessmentTypeId: e.target.value }))}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <option value="">Select assessment type</option>
+                        {assessmentTypes.map(type => (
+                          <option key={type.id} value={type.id.toString()}>
+                            {type.name}
+                          </option>
                         ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="templateVersion" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Version</label>
+                      <Input
+                        id="templateVersion"
+                        value={newTemplate.version}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTemplate(prev => ({ ...prev, version: e.target.value }))}
+                        placeholder="e.g., v1.0"
+                      />
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="templates" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create New Template</CardTitle>
-              <CardDescription>
-                Create a new assessment template with versioning
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleCreateTemplate} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="templateAssessmentType" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Assessment Type</label>
-                    <select 
-                      id="templateAssessmentType"
-                      value={newTemplate.assessmentTypeId} 
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setNewTemplate(prev => ({ ...prev, assessmentTypeId: e.target.value }))}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <option value="">Select assessment type</option>
-                      {assessmentTypes.map(type => (
-                        <option key={type.id} value={type.id.toString()}>
-                          {type.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="templateVersion" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Version</label>
+                    <label htmlFor="templateName" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Template Name</label>
                     <Input
-                      id="templateVersion"
-                      value={newTemplate.version}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTemplate(prev => ({ ...prev, version: e.target.value }))}
-                      placeholder="e.g., v1.0"
+                      id="templateName"
+                      value={newTemplate.name}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTemplate(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="e.g., Manager Self-Assessment"
                     />
                   </div>
-                </div>
-                <div>
-                  <label htmlFor="templateName" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Template Name</label>
-                  <Input
-                    id="templateName"
-                    value={newTemplate.name}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTemplate(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g., Manager Self-Assessment"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="templateDescription" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Description</label>
-                  <textarea
-                    id="templateDescription"
-                    value={newTemplate.description}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewTemplate(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Describe this template..."
-                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </div>
-                <Button type="submit" className="w-full">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Template
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+                  <div>
+                    <label htmlFor="templateDescription" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Description</label>
+                    <textarea
+                      id="templateDescription"
+                      value={newTemplate.description}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewTemplate(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Describe this template..."
+                      className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                  <Button type="submit" className="w-full">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Template
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Existing Templates</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {templates.map(template => (
-                  <div key={template.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <div className="font-semibold">{template.name}</div>
-                      <div className="text-sm text-muted-foreground">{template.description}</div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Existing Templates</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {templates.map(template => (
+                    <div key={template.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <div className="font-semibold">{template.name}</div>
+                        <div className="text-sm text-muted-foreground">{template.description}</div>
                                              <div className="flex gap-2 mt-1">
                          <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold">{template.assessmentTypeName}</span>
                          <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-secondary text-secondary-foreground">{template.version}</span>
@@ -510,5 +512,6 @@ export default function BuilderPage() {
         </TabsContent>
       </Tabs>
     </div>
+    </DashboardLayout>
   );
 } 

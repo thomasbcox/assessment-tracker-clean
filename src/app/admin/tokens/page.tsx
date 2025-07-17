@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { DashboardLayout } from '@/components/dashboard/dashboard-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { sessionManager } from '@/lib/session';
@@ -114,80 +115,82 @@ export default function TokensPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Magic Link Tokens</h1>
-        <Button 
-          onClick={handleCleanup} 
-          disabled={cleanupLoading}
-          variant="outline"
-        >
-          {cleanupLoading ? 'Cleaning...' : 'Cleanup Expired Tokens'}
-        </Button>
-      </div>
+    <DashboardLayout>
+      <div className="container mx-auto p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Magic Link Tokens</h1>
+          <Button 
+            onClick={handleCleanup} 
+            disabled={cleanupLoading}
+            variant="outline"
+          >
+            {cleanupLoading ? 'Cleaning...' : 'Cleanup Expired Tokens'}
+          </Button>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Token Management</CardTitle>
-          <CardDescription>
-            View and manage magic link tokens. Expired tokens are automatically cleaned up.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {tokens.length === 0 ? (
-              <p className="text-gray-500">No tokens found.</p>
-            ) : (
-              <div className="grid gap-4">
-                {tokens.map((token) => (
-                  <div
-                    key={token.id}
-                    className={`p-4 border rounded-lg ${
-                      isExpired(token.expiresAt)
-                        ? 'bg-gray-50 border-gray-200'
-                        : isUsed(token.used)
-                        ? 'bg-blue-50 border-blue-200'
-                        : 'bg-green-50 border-green-200'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-2">
-                        <p className="font-medium">{token.email}</p>
-                        <p className="text-sm text-gray-600">
-                          Token: {token.token.substring(0, 16)}...
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Created: {formatDate(token.createdAt)}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Expires: {formatDate(token.expiresAt)}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-end space-y-1">
-                        {isExpired(token.expiresAt) && (
-                          <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">
-                            Expired
-                          </span>
-                        )}
-                        {isUsed(token.used) && (
-                          <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
-                            Used
-                          </span>
-                        )}
-                        {!isExpired(token.expiresAt) && !isUsed(token.used) && (
-                          <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
-                            Active
-                          </span>
-                        )}
+        <Card>
+          <CardHeader>
+            <CardTitle>Token Management</CardTitle>
+            <CardDescription>
+              View and manage magic link tokens. Expired tokens are automatically cleaned up.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {tokens.length === 0 ? (
+                <p className="text-gray-500">No tokens found.</p>
+              ) : (
+                <div className="grid gap-4">
+                  {tokens.map((token) => (
+                    <div
+                      key={token.id}
+                      className={`p-4 border rounded-lg ${
+                        isExpired(token.expiresAt)
+                          ? 'bg-gray-50 border-gray-200'
+                          : isUsed(token.used)
+                          ? 'bg-blue-50 border-blue-200'
+                          : 'bg-green-50 border-green-200'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-2">
+                          <p className="font-medium">{token.email}</p>
+                          <p className="text-sm text-gray-600">
+                            Token: {token.token.substring(0, 16)}...
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Created: {formatDate(token.createdAt)}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Expires: {formatDate(token.expiresAt)}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end space-y-1">
+                          {isExpired(token.expiresAt) && (
+                            <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">
+                              Expired
+                            </span>
+                          )}
+                          {isUsed(token.used) && (
+                            <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
+                              Used
+                            </span>
+                          )}
+                          {!isExpired(token.expiresAt) && !isUsed(token.used) && (
+                            <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                              Active
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardLayout>
   );
 } 
