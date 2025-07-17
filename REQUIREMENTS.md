@@ -107,7 +107,7 @@ The system supports three distinct assessment types, each with specific purposes
 
 #### **Relationship Rules**
 - Managers can only be evaluated by their direct subordinates and others whom they invite; each invitee is identified at invitation time whether they are a direct subordinate or have some other relationship to the manager being assessed
-- Subordinates can only have one direct manager per period
+- **Multiple managers allowed per user per period** - users can have multiple managers in a given time period
 - Manager relationships are period-specific
 - Managers cannot evaluate themselves using the "team member assessment of their manager"
 - Managers do evaluate themselves using the "self assessment for managers"
@@ -119,6 +119,56 @@ The system supports three distinct assessment types, each with specific purposes
 - Managers cannot modify subordinate responses
 - Managers cannot view individual evaluations of them (the "team member assessment of their manager") and managers can only see summary data after there are at least 3 responses from 3 different subordinates in that assessment period
 - Admin can view all relationships and assessments
+
+### **5. Invitation System**
+
+#### **Role-Based Invitation Permissions**
+- **Superadmin**: Can invite Admins, Managers, and Users
+- **Admin**: Can invite Managers and Users (users will assess the admin as if they were a manager)
+- **Manager**: Can invite Users only
+- **User**: Cannot invite anyone
+
+#### **Invitation Process**
+- **Manager Invites**: Invitee receives "Manager Self-Assessment" template
+- **User Invites**: Invitee receives "Team Member Assessment" template (about the person who invited them)
+- **Template Selection**: Use the specific template specified in the invitation (Approach A)
+- **Multiple Invitations**: Allow multiple invitations for same user (no duplicate prevention)
+
+#### **User Account Creation via Invitation**
+- **New Users**: Create user account when invitation is accepted
+- **Existing Users**: Link invitation to existing user account
+- **Name Handling**: 
+  - If firstName/lastName provided in invitation: Use provided names
+  - If not provided: Use email prefix as firstName, leave lastName as null
+- **Role Assignment**: Based on invitedRole field in invitation
+- **Name Editing**: Users can edit their first and last names after account creation
+
+#### **Assessment Instance Creation**
+- **Timing**: Create assessment instance when invitation is accepted
+- **Purpose**: Track invited users who never get around to logging in
+- **Due Date**: 
+  - Settable by manager during invitation
+  - Defaults to max(period_end_date + 30 days, today + 14 days)
+  - Stored as TEXT in ISO 8601 format
+
+#### **Manager Relationship Creation**
+- **Auto-Creation**: Create manager relationships automatically upon user creation
+- **Multiple Managers**: Allow multiple managers per user per period
+- **Relationship Type**: Only create relationships when inviter is manager/admin
+
+#### **Post-Acceptance Flow**
+- **New Users**: Send magic link for first login, redirect to login page with success message
+- **Existing Users**: Redirect directly to assessment dashboard
+- **All Users**: Show the specific assessment they were invited to complete
+
+#### **Invitation Email Content**
+- **Subject**: "You've been invited to complete an assessment"
+- **Body**: 
+  - Who invited them
+  - What type of assessment (Manager Self-Assessment vs Team Member Assessment)
+  - Due date
+  - Link to accept invitation
+  - Brief explanation of the assessment process
 
 ### **5. Data Management & Privacy**
 
