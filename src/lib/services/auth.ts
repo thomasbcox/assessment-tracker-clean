@@ -1,5 +1,5 @@
 import { db, magicLinks, users } from '@/lib/db';
-import { eq, and, lt } from 'drizzle-orm';
+import { eq, and, lt, gt } from 'drizzle-orm';
 import crypto from 'crypto';
 import { logger } from '@/lib/logger';
 
@@ -180,7 +180,7 @@ export class AuthService {
         .where(and(
           eq(magicLinks.email, email),
           eq(magicLinks.used, 0),
-          lt(magicLinks.expiresAt, new Date().toISOString())
+          gt(magicLinks.expiresAt, new Date().toISOString())
         ));
 
       return tokens.map(token => ({
