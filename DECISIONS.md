@@ -1,146 +1,196 @@
-# Architecture Decision Records (ADR)
+# Architecture Decisions
 
-This document captures key architectural decisions made during the development of the Assessment Tracker application.
+This document records key technical decisions made during the development of the Assessment Tracker application.
 
-## ADR-001: Service Layer Architecture
+## Database & ORM
 
-**Date:** 2025-07-15  
-**Status:** Accepted  
-**Context:** Need to establish a clean, testable, and maintainable architecture for the Next.js application.
+### SQLite with Drizzle ORM
+- **Decision**: Use SQLite with Drizzle ORM for data persistence
+- **Rationale**: 
+  - SQLite provides ACID compliance and is perfect for single-instance deployments
+  - Drizzle ORM offers excellent TypeScript support and type safety
+  - Lightweight and requires no external database server
+- **Status**: ✅ Implemented
 
-**Decision:** Implement a service-layer-first architecture where:
-- All business logic lives in service functions
-- API routes are thin wrappers that only handle HTTP concerns
-- Services accept plain data objects, not framework objects
-- Services are fully testable without framework dependencies
+### Database Schema Design
+- **Decision**: Normalized schema with proper foreign key relationships
+- **Rationale**: Ensures data integrity and supports complex queries
+- **Status**: ✅ Implemented
 
-**Consequences:**
-- ✅ Improved testability and maintainability
-- ✅ Clear separation of concerns
-- ✅ Framework-agnostic business logic
-- ❌ Additional complexity in initial setup
-- ❌ Need for clear documentation and team training
+## Testing Strategy
 
----
+### Clean Test Patterns
+- **Decision**: Use simple factory functions instead of complex test data builders
+- **Rationale**: 
+  - Simple, predictable, and easy to understand
+  - No hidden state or side effects
+  - Easy to compose complex scenarios from simple pieces
+  - Better maintainability and debugging
+- **Status**: ✅ Implemented
 
-## ADR-002: Custom ESLint Rules for Architecture Enforcement
+### Real Database Testing
+- **Decision**: Use real SQLite database for all service layer tests
+- **Rationale**: 
+  - Ensures true integration coverage
+  - Catches schema and constraint issues early
+  - Prevents false positives from mocks
+- **Status**: ✅ Implemented
 
-**Date:** 2025-07-16  
-**Status:** Accepted  
-**Context:** Need to enforce service-layer-first architecture and prevent anti-patterns across the codebase.
+### Test Data Utilities
+- **Decision**: Simple factory functions with composition
+- **Rationale**: 
+  - Easy to understand and use
+  - No complex inheritance hierarchies
+  - Predictable behavior
+  - Easy to extend and maintain
+- **Status**: ✅ Implemented
 
-**Decision:** Implement custom ESLint rules in-repo to enforce:
-1. **No Logic in API Routes** - API routes can only parse requests and call service functions
-2. **No Framework Objects in Services** - Services must accept plain data types only
-3. **No .json() in Tests** - Prevent confusion between HTTP responses and service returns
-4. **Service Naming Conventions** - Enforce .service.ts files and function exports
-5. **Validate Test Inputs** - Ensure test inputs match TypeScript interfaces
-6. **Restrict API Route Imports** - Only allow next/server, services, and types
+## Authentication
 
-**Rationale:**
-- **In-repo vs Plugin:** Chose in-repo implementation for faster iteration and project-specific customization
-- **Immediate Enforcement:** Rules provide real-time feedback during development
-- **Team Alignment:** Ensures consistent patterns across all developers
-- **Prevent Technical Debt:** Catches anti-patterns before they become entrenched
+### Magic Link Authentication
+- **Decision**: Implement magic link authentication instead of password-based auth
+- **Rationale**: 
+  - Eliminates password management complexity
+  - More secure (no password storage)
+  - Better user experience
+- **Status**: ✅ Implemented
 
-**Implementation:**
-- Created `eslint-rules/` directory with 6 custom rules
-- Updated `eslint.config.mjs` to include custom rules
-- Rules are configured as errors for critical patterns, warnings for suggestions
+## Frontend Architecture
 
-**Consequences:**
-- ✅ Enforces architectural patterns automatically
-- ✅ Prevents common anti-patterns
-- ✅ Improves code quality and consistency
-- ✅ Reduces code review burden
-- ❌ Learning curve for team members
-- ❌ Potential false positives requiring rule tuning
+### Next.js App Router
+- **Decision**: Use Next.js 15 with App Router
+- **Rationale**: 
+  - Latest Next.js features and performance improvements
+  - Server components for better performance
+  - Built-in API routes
+- **Status**: ✅ Implemented
 
----
+### TypeScript
+- **Decision**: Use TypeScript throughout the application
+- **Rationale**: 
+  - Type safety and better developer experience
+  - Catches errors at compile time
+  - Better IDE support and refactoring
+- **Status**: ✅ Implemented
 
-## ADR-003: Standardized Error Handling
+### Tailwind CSS
+- **Decision**: Use Tailwind CSS for styling
+- **Rationale**: 
+  - Utility-first approach for rapid development
+  - Consistent design system
+  - Small bundle size with purging
+- **Status**: ✅ Implemented
 
-**Date:** 2025-07-16  
-**Status:** Accepted  
-**Context:** Need consistent error handling across all services and API routes.
+## API Design
 
-**Decision:** Implement centralized error handling with:
-- `ServiceError` class with standardized properties (code, statusCode, details)
-- Factory functions for common error types (validation, not found, database, etc.)
-- Consistent error codes and HTTP status codes
-- Centralized logging and API response helpers
+### RESTful API Routes
+- **Decision**: Use Next.js API routes with RESTful conventions
+- **Rationale**: 
+  - Simple and familiar
+  - Good for CRUD operations
+  - Easy to test and document
+- **Status**: ✅ Implemented
 
-**Consequences:**
-- ✅ Consistent error responses across the application
-- ✅ Better debugging and monitoring
-- ✅ Type-safe error handling
-- ❌ Additional complexity in error handling setup
+### Service Layer Pattern
+- **Decision**: Separate business logic into service layer
+- **Rationale**: 
+  - Better separation of concerns
+  - Easier to test business logic
+  - Reusable across different API routes
+- **Status**: ✅ Implemented
 
----
+## Error Handling
 
-## ADR-004: Interface-First Service Design
+### Centralized Error Handling
+- **Decision**: Implement centralized error handling with proper logging
+- **Rationale**: 
+  - Consistent error responses
+  - Better debugging and monitoring
+  - Security (no sensitive data in errors)
+- **Status**: ✅ Implemented
 
-**Date:** 2025-07-16  
-**Status:** Accepted  
-**Context:** Need clear contracts for all services to ensure consistency and testability.
+## Development Workflow
 
-**Decision:** Define TypeScript interfaces for all services before implementation:
-- All services implement defined interfaces
-- Input/output types use Zod schemas for validation
-- Clear separation between interface and implementation
-- Comprehensive type definitions for all service operations
+### ESLint Configuration
+- **Decision**: Custom ESLint rules for testing patterns
+- **Rationale**: 
+  - Enforce clean test patterns
+  - Prevent anti-patterns
+  - Consistent code quality
+- **Status**: ✅ Implemented
 
-**Consequences:**
-- ✅ Clear service contracts and expectations
-- ✅ Better TypeScript support and IDE experience
-- ✅ Easier testing with proper type checking
-- ✅ Consistent service patterns across the application
-- ❌ Additional upfront design work
-- ❌ Need to maintain interface-implementation alignment
+### Documentation
+- **Decision**: Comprehensive documentation with examples
+- **Rationale**: 
+  - Helps team members understand patterns
+  - Reduces onboarding time
+  - Maintains consistency
+- **Status**: ✅ Implemented
 
----
+## Performance
 
-## ADR-005: Test Data Builder System
+### Database Indexing
+- **Decision**: Add indexes for frequently queried columns
+- **Rationale**: 
+  - Better query performance
+  - Essential for production use
+- **Status**: ✅ Implemented
 
-**Date:** 2025-01-27  
-**Status:** Accepted  
-**Context:** Need a robust, maintainable way to create test data for complex database relationships without manual foreign key management.
+### Component Optimization
+- **Decision**: Use React Server Components where appropriate
+- **Rationale**: 
+  - Better performance
+  - Reduced client-side JavaScript
+- **Status**: ✅ Implemented
 
-**Decision:** Implement a comprehensive test data builder system with:
-- **Dependency-aware architecture** organized by foreign key relationships
-- **Automatic dependency resolution** - no manual foreign key management required
-- **Fluent configuration API** for easy test data creation
-- **Type-safe builders** with full TypeScript support
-- **Database cleanup utilities** with dependency-aware truncation
-- **Layer 2 testing approach** using real SQLite database
+## Security
 
-**Rationale:**
-- **Dependency Management:** Complex foreign key relationships require careful ordering
-- **Test Isolation:** Each test needs clean, unique data
-- **Maintainability:** Centralized test data creation reduces duplication
-- **Type Safety:** Full TypeScript integration prevents runtime errors
-- **Performance:** In-memory SQLite provides fast test execution
+### Input Validation
+- **Decision**: Validate all inputs at API boundaries
+- **Rationale**: 
+  - Prevents injection attacks
+  - Ensures data integrity
+  - Better error messages
+- **Status**: ✅ Implemented
 
-**Implementation:**
-- Created `SimpleTestDataBuilder` with 4 dependency groups
-- Implemented `SimpleDatabaseCleanup` for proper test isolation
-- Built comprehensive test suite with 14 test cases
-- Created 10 practical usage examples
-- Integrated with existing Drizzle ORM schema
+### Environment Variables
+- **Decision**: Use environment variables for configuration
+- **Rationale**: 
+  - Security best practice
+  - Easy deployment configuration
+  - No secrets in code
+- **Status**: ✅ Implemented
 
-**Dependency Groups:**
-1. **Group 1:** Dimension tables (users, assessment_types, assessment_periods, magic_links)
-2. **Group 2:** Tables with FKs to Group 1 (assessment_categories, assessment_templates, assessment_instances, manager_relationships)
-3. **Group 3:** Tables with FKs to Group 2 (assessment_questions, invitations)
-4. **Group 4:** Tables with FKs to Group 3 (assessment_responses)
+## Monitoring & Logging
 
-**Consequences:**
-- ✅ Automatic dependency management eliminates foreign key errors
-- ✅ Consistent test data creation across all test suites
-- ✅ Improved test maintainability and readability
-- ✅ Better test isolation and data cleanup
-- ✅ Type-safe test data creation
-- ✅ Follows Layer 2 testing standards (real database)
-- ❌ Initial complexity in understanding dependency groups
-- ❌ Learning curve for team members
-- ❌ Need for comprehensive documentation and examples 
+### Structured Logging
+- **Decision**: Use structured logging with different levels
+- **Rationale**: 
+  - Better debugging and monitoring
+  - Environment-specific output
+  - Production-ready logging
+- **Status**: ✅ Implemented
+
+## Future Considerations
+
+### Scalability
+- **Consideration**: Plan for potential migration to PostgreSQL
+- **Rationale**: 
+  - Better for concurrent access
+  - More advanced features
+  - Better for distributed deployments
+- **Status**: 🔄 Future consideration
+
+### Caching
+- **Consideration**: Implement caching for frequently accessed data
+- **Rationale**: 
+  - Better performance
+  - Reduced database load
+- **Status**: 🔄 Future consideration
+
+### Real-time Features
+- **Consideration**: Add WebSocket support for real-time updates
+- **Rationale**: 
+  - Better user experience
+  - Real-time collaboration features
+- **Status**: 🔄 Future consideration 

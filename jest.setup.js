@@ -1,18 +1,5 @@
 import '@testing-library/jest-dom';
 
-// Global test database setup
-import { setupTestDatabase, teardownTestDatabase } from './src/lib/test-utils.js';
-
-// Setup test database before all tests
-beforeAll(async () => {
-  await setupTestDatabase();
-});
-
-// Cleanup test database after all tests
-afterAll(async () => {
-  await teardownTestDatabase();
-});
-
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
   useRouter() {

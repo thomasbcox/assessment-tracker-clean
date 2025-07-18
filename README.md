@@ -1,34 +1,67 @@
 # Assessment Tracker
 
-A comprehensive performance evaluation system built with Next.js 15, TypeScript, and SQLite. Features role-based access control, assessment templates, and real-time tracking.
+A modern assessment management system built with Next.js, TypeScript, and SQLite.
 
-## 🚀 Getting Started
+## Features
+
+- **User Management**: Create and manage users with different roles
+- **Assessment Types**: Define different types of assessments
+- **Assessment Periods**: Organize assessments by time periods
+- **Assessment Templates**: Create reusable assessment templates
+- **Assessment Categories**: Group assessment questions by categories
+- **Assessment Questions**: Define questions for assessments
+- **Assessment Instances**: Track individual assessment attempts
+- **Assessment Responses**: Store and analyze assessment responses
+- **Manager Relationships**: Define reporting relationships
+- **Invitations**: Invite users to complete assessments
+- **Magic Links**: Secure authentication without passwords
+
+## Tech Stack
+
+- **Frontend**: Next.js 15, React, TypeScript
+- **Styling**: Tailwind CSS
+- **Database**: SQLite with Drizzle ORM
+- **Testing**: Jest with React Testing Library
+- **Authentication**: Magic link authentication
+
+## Getting Started
 
 ### Prerequisites
-- Node.js 18+
+
+- Node.js 18+ 
 - npm or yarn
 
 ### Installation
+
+1. Clone the repository:
 ```bash
-# Clone the repository
 git clone <repository-url>
 cd assessment-tracker-clean
+```
 
-# Install dependencies
+2. Install dependencies:
+```bash
 npm install
+```
 
-# Set up the database
+3. Set up the database:
+```bash
 npm run setup-db
+```
 
-# Start the development server
+4. Start the development server:
+```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## 🧪 Testing
+## Testing
 
-### Run Tests
+The project uses clean, simple test patterns for maintainable and predictable tests.
+
+### Running Tests
+
 ```bash
 # Run all tests
 npm test
@@ -38,141 +71,98 @@ npm run test:watch
 
 # Run tests with coverage
 npm run test:coverage
-
-# Check for missing "use client" directives
-npm run check:client
 ```
 
-### Current Test Status
-- **Total Tests**: 267 tests across 23 test suites
-- **Passing**: 188 tests (70.4%)
-- **Failing**: 79 tests (29.6%)
+### Test Patterns
 
-**Note**: Core business logic and utilities have excellent test coverage. Remaining failures are primarily UI test expectations and legacy API route tests.
+We use simple factory functions for creating test data:
 
-### Test Data Builder System
-A comprehensive test data builder system has been implemented for robust testing with complex database relationships:
-
-- **Dependency-aware architecture** with automatic foreign key management
-- **Fluent configuration API** for easy test data creation
-- **Type-safe builders** with full TypeScript support
-- **Database cleanup utilities** for proper test isolation
-
-**Service Layer Test Policy:**
-- All service layer tests must use a real in-memory SQLite database and the test data builder system.
-- **Mocking the database or ORM in service layer tests is strictly forbidden and enforced by ESLint.**
-- See [TESTING.md](TESTING.md) for details on the policy and enforcement.
-
-**Usage Example:**
 ```typescript
-const builder = createSimpleTestDataBuilder(db);
-const result = await builder.create({
-  user: { email: 'manager@company.com', role: 'manager' },
-  assessmentType: { name: 'Leadership Assessment' },
-  assessmentPeriod: { name: 'Q1 2024', isActive: 1 }
+// Create a test user
+const user = await createTestUser({
+  email: 'test@example.com',
+  role: 'manager'
+});
+
+// Create multiple users
+const users = await createMultipleUsers([
+  { email: 'user1@example.com', role: 'user' },
+  { email: 'user2@example.com', role: 'manager' }
+]);
+
+// Create complex assessment setup
+const setup = await createTestAssessmentSetup({
+  type: { name: 'Team Assessment' },
+  period: { name: 'Q1 2024', isActive: 1 },
+  template: { name: 'Leadership Template' },
+  category: { name: 'Leadership' }
 });
 ```
 
-See [TEST_DATA_BUILDER_SUMMARY.md](TEST_DATA_BUILDER_SUMMARY.md) for complete documentation.
+See `TESTING_PATTERNS.md` and `TEAM_TRAINING.md` for detailed guidance on test patterns.
 
-## Logger Test Policy
+## Project Structure
 
-Logger tests must:
-- Capture and assert on real console output (no mocking of console or logger)
-- Verify environment-specific output (development, test, production)
-- Comply with the custom ESLint rule: `no-logger-mocking-in-tests`
-
-See [TESTING.md](./TESTING.md#logger-test-policy) for details.
-
-## 🛠️ Development
-
-### Key Commands
-```bash
-# Development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
-
-# Lint code
-npm run lint
-
-# Type checking
-npx tsc --noEmit
+```
+src/
+├── app/                    # Next.js app router pages
+├── components/             # React components
+│   ├── ui/                # Reusable UI components
+│   ├── forms/             # Form components
+│   └── dashboard/         # Dashboard-specific components
+├── lib/                   # Core utilities and services
+│   ├── db.ts             # Database schema and connection
+│   ├── test-utils-clean.ts # Clean test utilities
+│   └── services/         # Business logic services
+└── tests/                # Integration tests
 ```
 
-### Project Structure
-- `src/app/` - Next.js App Router pages and API routes
-- `src/components/` - React components and UI library
-- `src/lib/` - Database, authentication, and utility functions
-- `src/types/` - TypeScript type definitions
-- `scripts/` - Development and build scripts
+## Database Schema
 
-## 📚 Documentation
+The application uses SQLite with the following main tables:
 
-### Core Documentation
-- **[Architecture](ARCHITECTURE.md)** - System architecture and technical patterns
-- **[Architecture Decisions](DECISIONS.md)** - Key technical decisions and rationale
-- **[Development Guidelines](DEVELOPMENT_GUIDELINES.md)** - Coding standards and best practices
-- **[Development History](DEVELOPMENT_HISTORY.md)** - Project timeline and milestones
-- **[Service Layer Pattern](SERVICE_LAYER_PATTERN.md)** - API architecture and testing strategy
-- **[Testing Documentation](TESTING.md)** - Comprehensive testing guide
-- **[API Testing Strategy](API_TESTING_STRATEGY.md)** - Service layer testing approach
-- **[Test Data Builder Summary](TEST_DATA_BUILDER_SUMMARY.md)** - Comprehensive test data builder system documentation
+- `users` - User accounts and profiles
+- `assessment_types` - Types of assessments
+- `assessment_periods` - Time periods for assessments
+- `assessment_templates` - Reusable assessment templates
+- `assessment_categories` - Question categories
+- `assessment_questions` - Individual questions
+- `assessment_instances` - Assessment attempts
+- `assessment_responses` - User responses to questions
+- `manager_relationships` - Reporting relationships
+- `invitations` - Assessment invitations
+- `magic_links` - Authentication tokens
 
-### Requirements & Planning
-- **[Requirements](REQUIREMENTS.md)** - Feature requirements and specifications
-- **[Roadmap](ROADMAP.md)** - Development phases and progress
-- **[Database Schema](database-schema.md)** - Database design and relationships
+## Development Guidelines
 
-### Technical Details
-- **[ES Modules Migration](ES_MODULES_MIGRATION.md)** - Migration from CommonJS to ES modules
-- **[Additional Tests](ADDITIONAL_TESTS.md)** - Extended testing scenarios
+### Code Style
 
-## 🧪 Testing Stack
+- Use TypeScript for all new code
+- Follow ESLint rules and Prettier formatting
+- Write tests for all new features
+- Use the clean test patterns documented in `TESTING_PATTERNS.md`
 
-- **Test Runner**: Jest 30.0.4
-- **Component Testing**: @testing-library/react 16.3.0
-- **TypeScript Support**: ts-jest with react-jsx
-- **Test Environment**: jsdom for React component testing
-- **Database Testing**: SQLite in-memory for integration tests
+### Testing
 
-## 🚀 Deployment
+- Write tests using the clean factory function patterns
+- Avoid complex test data builders
+- Keep tests independent and stateless
+- Use proper cleanup in beforeEach/afterEach
 
-The easiest way to deploy this Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme).
+### Database
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Use Drizzle ORM for all database operations
+- Define schemas in `src/lib/db.ts`
+- Use migrations for schema changes
+- Test database operations with the clean test utilities
 
-## 📖 Learn More
+## Contributing
 
-To learn more about the technologies used:
+1. Follow the established patterns and guidelines
+2. Write tests for new features
+3. Update documentation as needed
+4. Use the code review checklist for tests
 
-- [Next.js Documentation](https://nextjs.org/docs) - Next.js features and API
-- [React Documentation](https://react.dev/) - React features and concepts
-- [TypeScript Documentation](https://www.typescriptlang.org/docs/) - TypeScript language guide
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs) - Utility-first CSS framework
+## License
 
-## Email Delivery & Testing
-
-- **Automated tests:** All email sending is mocked (no real emails sent).
-- **Manual/E2E/Dev:** Uses Mailtrap for safe email delivery. Configure credentials in `.env.local` or your deployment secrets.
-- **Secrets:** Set `MAILTRAP_USER` and `MAILTRAP_PASS` in your environment. Never commit real credentials to git.
-
-### Configuring Mailtrap
-
-1. Sign up at [Mailtrap.io](https://mailtrap.io/).
-2. Get your SMTP credentials.
-3. Add to your `.env.local`:
-   ```env
-   MAILTRAP_USER=your-mailtrap-username
-   MAILTRAP_PASS=your-mailtrap-password
-   ```
-4. Emails sent in dev/staging will appear in your Mailtrap inbox.
-
-### How it works
-- The app uses `src/lib/mailer.ts` for all email delivery.
-- In tests, the mailer is mocked using Jest.
-- In dev/staging, real emails go to Mailtrap.
+This project is licensed under the MIT License.

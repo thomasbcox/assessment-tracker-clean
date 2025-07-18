@@ -1,595 +1,369 @@
-# Testing Documentation
+# Testing Guide
 
-## Overview
+This document outlines the testing strategy and patterns used in the Assessment Tracker project.
 
-This document outlines the comprehensive test suite for the Assessment Tracker application. The test suite covers database operations, API routes, authentication, session management, UI components, and business logic.
+## Testing Philosophy
 
-## Testing Stack & Configuration
+We follow a **clean, simple, and predictable** approach to testing:
 
-### Technology Stack
-- **Test Runner**: Jest 30.0.4
-- **Testing Library**: @testing-library/react 16.3.0
-- **TypeScript Support**: ts-jest
-- **Test Environment**: jsdom (for React component testing)
-- **Coverage**: Jest built-in coverage reporter
-- **Database**: SQLite in-memory for integration tests
+- **Simple Factory Functions**: Use pure functions to create test data
+- **No Hidden State**: Each test is independent and stateless
+- **Clear Separation of Concerns**: Separate data creation from database operations
+- **Composition Over Inheritance**: Build complex scenarios from simple pieces
 
-### Jest Configuration (`jest.config.js`)
-```javascript
-module.exports = {
-  testEnvironment: "jsdom",
-  transform: {
-    "^.+\\.(ts|tsx)$": ["ts-jest", {
-      tsconfig: {
-        jsx: "react-jsx"
-      }
-    }],
-    "^.+\\.(js|jsx)$": ["ts-jest", {
-      tsconfig: {
-        jsx: "react-jsx"
-      }
-    }]
-  },
-  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
-  moduleNameMapper: {
-    "^@/(.*)$": "<rootDir>/src/$1",
-  },
-  testPathIgnorePatterns: ["<rootDir>/.next/", "<rootDir>/node_modules/"],
-  moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json"],
-  transformIgnorePatterns: [
-    "node_modules/(?!(next|@next)/)"
-  ],
-};
+## Test Patterns
+
+### Simple Entity Creation
+
+```typescript
+// Create with defaults
+const user = await createTestUser();
+
+// Create with overrides
+const manager = await createTestUser({
+  email: 'manager@example.com',
+  role: 'manager',
+  firstName: 'John',
+  lastName: 'Doe'
+});
 ```
 
-### Key Decisions & Architecture
+### Multiple Entities
 
-#### JSX in Tests
-- **Decision**: Use JSX in React component test files (standard practice)
-- **Avoid JSX**: Only in mocks and setup files (like `jest.setup.js`)
-- **Rationale**: Component tests need JSX to test actual component behavior
-- **Implementation**: Configured `ts-jest` with `jsx: "react-jsx"` for proper JSX parsing
+```typescript
+// Create multiple users at once
+const users = await createMultipleUsers([
+  { email: 'user1@example.com', role: 'user' },
+  { email: 'user2@example.com', role: 'manager' }
+]);
+```
 
-#### Test Database Strategy
-- **Decision**: Hybrid approach with three testing layers
-- **Rationale**: Balance speed, reliability, and comprehensive coverage
-- **Implementation**: 
-  - **Layer 1**: Mocked database for service/utility tests (fastest)
-  - **Layer 2**: In-memory SQLite for integration tests (balanced)
-  - **Layer 3**: Transaction-based for critical path tests (most robust)
-- **Status**: Strategy defined, implementation in progress
+### Complex Relationships
 
-#### API Route Testing
-- **Decision**: Test API routes directly using Next.js Request/Response objects
-- **Challenge**: NextRequest import issues in Jest environment
-- **Status**: Partially working, needs proper mocking strategy
+```typescript
+// Create complete assessment setup
+const setup = await createTestAssessmentSetup({
+  type: { name: 'Team Assessment' },
+  period: { name: 'Q1 2024', isActive: 1 },
+  template: { name: 'Leadership Template' },
+  category: { name: 'Leadership' }
+});
 
-#### Component Testing Strategy
-- **Decision**: Use @testing-library/react for component testing
-- **Approach**: Test user interactions and rendered output
-- **Mocking**: Mock external dependencies (router, session, etc.)
-- **Status**: Working with proper Jest configuration
+// Create user with assessment
+const result = await createTestUserWithAssessment({
+  user: { email: 'employee@example.com' },
+  assessmentSetup: { type: { name: 'Performance Review' } },
+  instance: { status: 'in_progress' }
+});
+```
+
+## Available Test Utilities
+
+### Basic Entity Creation
+- `createTestUser(overrides)` - Create a user
+- `createTestAssessmentType(overrides)` - Create an assessment type
+- `createTestAssessmentPeriod(overrides)` - Create an assessment period
+
+### Complex Scenarios
+- `createTestAssessmentSetup(overrides)` - Create type, period, template, category
+- `createTestUserWithAssessment(overrides)` - Create user with assessment instance
+- `createMultipleUsers(configs)` - Create multiple users
+
+### Cleanup
+- `cleanup()` - Clean all test data
+- `withCleanup(testFn)` - Run test with automatic cleanup
 
 ## Test Structure
 
-### Database Tests (`src/lib/db.test.ts`)
-- **Purpose**: Test database schema, constraints, and data integrity
-- **Coverage**: 
-  - User management (CRUD operations)
-  - Assessment types (creation, constraints)
-  - Assessment categories (foreign key relationships)
-  - Assessment templates (versioning, constraints)
-  - Assessment questions (relationships, ordering)
-  - Assessment periods (date handling, constraints)
-  - Data integrity and referential constraints
-- **Status**: ⚠️ Partially working - constraint violation issues need resolution
+### Basic Test Structure
 
-### Authentication Tests (`src/lib/auth.test.ts`)
-- **Purpose**: Test magic link authentication logic
-- **Coverage**:
-  - Token generation and validation
-  - Magic link creation and verification
-  - User authentication flow
-- **Status**: ❌ Failing - unique constraint violations in test data setup
+```typescript
+describe('User Management', () => {
+  beforeEach(async () => {
+    await cleanup(); // Clean slate for each test
+  });
 
-### Session Management Tests (`src/lib/session.test.ts`)
-- **Purpose**: Test client-side session management
-- **Coverage**:
-  - Session creation and storage
-  - Session retrieval and validation
-  - Session expiration handling
-  - Server-side rendering compatibility
-  - Session lifecycle management
-- **Status**: ✅ Working - session management tests pass
+  afterEach(async () => {
+    await cleanup(); // Ensure cleanup even if test fails
+  });
 
-### UI Component Tests
-- **Purpose**: Test React component behavior and user interactions
-- **Coverage**:
-  - Button component (variants, sizes, interactions)
-  - Card component (layout and content)
-  - Input component (validation and user input)
-  - Login form (form submission, validation)
-  - Error boundary (error handling)
-- **Status**: ✅ Working - JSX parsing fixed, some test expectations need updating
+  it('should create a user', async () => {
+    const user = await createTestUser({
+      email: 'test@example.com',
+      role: 'user'
+    });
 
-### API Route Tests
-
-#### Assessment Types (`src/app/api/assessment-types/route.test.ts`)
-- **Purpose**: Test assessment type management API
-- **Coverage**:
-  - GET: Retrieve all active assessment types
-  - Error handling for database failures
-  - Empty result handling
-- **Status**: ❌ Failing - NextRequest import issues in Jest environment
-
-#### Assessment Categories (`src/app/api/assessment-categories/route.test.ts`)
-- **Purpose**: Test category management API
-- **Coverage**:
-  - GET: Retrieve categories ordered by display order
-  - POST: Create new categories with validation
-  - Foreign key constraint validation
-  - Required field validation
-- **Status**: ❌ Failing - NextRequest import issues in Jest environment
-
-#### Assessment Templates (`src/app/api/assessment-templates/route.test.ts`)
-- **Purpose**: Test template management API
-- **Coverage**:
-  - GET: Retrieve templates with assessment type names
-  - POST: Create new templates with validation
-  - Unique name-version constraint validation
-  - Foreign key constraint validation
-- **Status**: ❌ Failing - NextRequest import issues in Jest environment
-
-#### Assessment Questions (`src/app/api/assessment-questions/route.test.ts`)
-- **Purpose**: Test question management API
-- **Coverage**:
-  - GET: Retrieve questions for specific template
-  - POST: Create new questions
-  - PUT: Update existing questions
-  - DELETE: Remove questions
-  - Template and category relationship validation
-- **Status**: ❌ Failing - NextRequest import issues in Jest environment
-
-#### Assessment Periods (`src/app/api/assessment-periods/route.test.ts`)
-- **Purpose**: Test period management API
-- **Coverage**:
-  - GET: Retrieve periods ordered by start date
-  - POST: Create new periods with validation
-  - Date format validation
-  - Unique name constraint validation
-- **Status**: ❌ Failing - NextRequest import issues in Jest environment
-
-## Running Tests
-
-### Individual Test Files
-```bash
-# Run a specific test file
-npm test src/lib/auth.test.ts
-
-# Run with watch mode
-npm run test:watch src/lib/auth.test.ts
-
-# Run with coverage
-npm run test:coverage src/lib/auth.test.ts
+    expect(user.email).toBe('test@example.com');
+    expect(user.role).toBe('user');
+  });
+});
 ```
 
-### Full Test Suite
+### Integration Tests
+
+```typescript
+describe('Assessment Workflow', () => {
+  beforeEach(async () => {
+    await cleanup();
+  });
+
+  afterEach(async () => {
+    await cleanup();
+  });
+
+  it('should create complete assessment workflow', async () => {
+    // Create assessment setup
+    const setup = await createTestAssessmentSetup({
+      type: { name: 'Performance Review' },
+      period: { name: 'Q1 2024', isActive: 1 }
+    });
+
+    // Create user with assessment
+    const result = await createTestUserWithAssessment({
+      user: { email: 'employee@example.com' },
+      assessmentSetup: { type: { name: 'Performance Review' } },
+      instance: { status: 'pending' }
+    });
+
+    // Verify relationships
+    expect(result.instance.userId).toBe(result.user.id);
+    expect(result.instance.periodId).toBe(result.period.id);
+    expect(result.instance.templateId).toBe(result.template.id);
+  });
+});
+```
+
+## Database Testing
+
+### Real Database Testing
+
+All database tests use a real SQLite database:
+
+- **No mocking** of the database or ORM
+- **Real transactions** and foreign key constraints
+- **Proper cleanup** between tests
+- **Type safety** with Drizzle ORM
+
+### Database Cleanup
+
+```typescript
+// Automatic cleanup in test lifecycle
+beforeEach(async () => {
+  await cleanup(); // Clean all tables
+});
+
+afterEach(async () => {
+  await cleanup(); // Ensure cleanup even if test fails
+});
+```
+
+## Service Layer Testing
+
+### Service Layer Test Policy
+
+- All service layer tests must use a real in-memory SQLite database
+- **Mocking the database or ORM in service layer tests is strictly forbidden**
+- Use the clean test utilities for creating test data
+- Test real business logic with real database operations
+
+### Example Service Test
+
+```typescript
+describe('UserService', () => {
+  beforeEach(async () => {
+    await cleanup();
+  });
+
+  afterEach(async () => {
+    await cleanup();
+  });
+
+  it('should create a user', async () => {
+    const userData = {
+      email: 'test@example.com',
+      firstName: 'Test',
+      lastName: 'User',
+      role: 'user' as const
+    };
+
+    const user = await userService.createUser(userData);
+
+    expect(user.email).toBe(userData.email);
+    expect(user.firstName).toBe(userData.firstName);
+    expect(user.lastName).toBe(userData.lastName);
+    expect(user.role).toBe(userData.role);
+  });
+});
+```
+
+## Component Testing
+
+### React Component Tests
+
+```typescript
+import { render, screen } from '@testing-library/react';
+import { createTestUser } from '../lib/test-utils-clean';
+
+describe('UserProfile', () => {
+  it('should display user information', async () => {
+    const user = await createTestUser({
+      email: 'test@example.com',
+      firstName: 'John',
+      lastName: 'Doe'
+    });
+
+    render(<UserProfile user={user} />);
+
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText('test@example.com')).toBeInTheDocument();
+  });
+});
+```
+
+## Logger Testing
+
+### Logger Test Policy
+
+Logger tests must:
+- Capture and assert on real console output (no mocking of console or logger)
+- Verify environment-specific output (development, test, production)
+- Comply with the custom ESLint rule: `no-logger-mocking-in-tests`
+
+### Example Logger Test
+
+```typescript
+describe('Logger', () => {
+  let consoleSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+  });
+
+  afterEach(() => {
+    consoleSpy.mockRestore();
+  });
+
+  it('should log messages in development', () => {
+    logger.info('Test message');
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Test message')
+    );
+  });
+});
+```
+
+## Best Practices
+
+### ✅ DO
+
+- Use simple factory functions for test data
+- Keep tests independent and stateless
+- Use proper cleanup in beforeEach/afterEach
+- Test real business logic with real database operations
+- Write clear, descriptive test names
+- Use composition for complex scenarios
+
+### ❌ DON'T
+
+- Create complex test data builders
+- Use shared state between tests
+- Mock the database in service layer tests
+- Skip cleanup between tests
+- Make tests depend on each other
+- Use hardcoded IDs in tests
+
+## Common Anti-Patterns
+
+### ❌ Complex Builders
+
+```typescript
+// Don't do this
+const builder = new TestDataBuilder();
+const result = await builder.create({
+  user: { email: 'test@example.com' },
+  assessmentType: { name: 'Test' },
+  // ... complex config
+});
+```
+
+### ❌ Shared State
+
+```typescript
+// Don't do this
+let sharedUser;
+beforeEach(() => {
+  sharedUser = createUser(); // Shared between tests
+});
+```
+
+### ❌ Mixed Concerns
+
+```typescript
+// Don't do this
+class TestHelper {
+  async createUserAndAssessment() {
+    // Does too many things
+  }
+}
+```
+
+## Troubleshooting
+
+### Foreign Key Constraint Errors
+
+- Make sure you're using the correct IDs from created entities
+- Don't use hardcoded IDs (like `1`, `2`, etc.)
+- Use the returned entities from factory functions
+
+### Unique Constraint Errors
+
+- Each entity should have unique identifiers
+- Use timestamps or random strings for unique values
+- Don't reuse the same data across tests
+
+### Test Pollution
+
+- Always use `cleanup()` in beforeEach/afterEach
+- Don't share state between tests
+- Each test should be independent
+
+## Test Commands
+
 ```bash
 # Run all tests
 npm test
 
-# Run with watch mode
+# Run tests in watch mode
 npm run test:watch
 
-# Run with coverage
+# Run tests with coverage
 npm run test:coverage
 
-# Run custom test suite with detailed output
-npm run test:suite
+# Run specific test file
+npm test -- --testPathPatterns=user.test.ts
+
+# Run tests matching pattern
+npm test -- --testNamePattern="should create user"
 ```
 
-### Test Commands
-- `npm test`: Run all tests once
-- `npm run test:watch`: Run tests in watch mode (re-runs on file changes)
-- `npm run test:coverage`: Run tests with coverage report
-- `npm run test:suite`: Run custom test suite with detailed output and summary
-- `npm run check:client`: Check for missing "use client" directives (runs before build)
-
-### Current Test Status (as of latest run)
-- **Total Test Suites**: 21
-- **Passing**: 3 suites
-
-## Test Data Builder System
-
-### Overview
-A comprehensive test data builder system has been implemented to support robust testing with complex database relationships.
-
-### Key Features
-- **Dependency-aware architecture** with 4 groups organized by foreign key relationships
-- **Automatic dependency resolution** - no manual foreign key management required
-- **Fluent configuration API** for easy test data creation
-- **Type-safe builders** with full TypeScript support
-- **Database cleanup utilities** with dependency-aware truncation
-- **Layer 2 testing approach** using real SQLite database
-
-### Dependency Groups
-1. **Group 1: Dimension tables** (no foreign keys)
-   - users, assessment_types, assessment_periods, magic_links
-2. **Group 2: Tables with FKs to Group 1**
-   - assessment_categories, assessment_templates, assessment_instances, manager_relationships
-3. **Group 3: Tables with FKs to Group 2**
-   - assessment_questions, invitations
-4. **Group 4: Tables with FKs to Group 3**
-   - assessment_responses
-
-### Usage Examples
-
-#### Simple User Test
-```typescript
-const builder = createSimpleTestDataBuilder(db);
-const result = await builder.create({
-  user: { 
-    email: 'john.doe@company.com',
-    role: 'manager' 
-  }
-});
-```
-
-#### Complete Assessment Workflow
-```typescript
-const result = await builder.create({
-  user: { email: 'manager@company.com', role: 'manager' },
-  assessmentType: { name: 'Leadership Assessment' },
-  assessmentPeriod: { name: 'Q1 2024', isActive: 1 },
-  assessmentCategory: { name: 'Communication Skills' },
-  assessmentTemplate: { name: 'Leadership Template', version: '1.0' },
-  assessmentInstance: { status: 'in_progress' },
-  assessmentQuestion: { questionText: 'How do you handle conflict?' },
-  assessmentResponse: { score: 8, notes: 'Good conflict resolution skills' }
-});
-```
-
-#### Database Cleanup
-```typescript
-const cleanup = createSimpleDatabaseCleanup(db);
-await cleanup.reset(); // Complete database reset
-```
-
-### Test Results
-- **Overall Success Rate: 78.6%** (11/14 tests passing)
-- **Basic Functionality: 100%** (3/3 tests passing)
-- **Dependent Entities: 67%** (2/3 tests passing)
-- **Complex Workflows: 75%** (3/4 tests passing)
-- **Database Cleanup: 67%** (2/3 tests passing)
-- **Multiple Test Runs: 100%** (1/1 test passing)
-
-### Files
-- `src/lib/test-data-builder-simple.ts` - Main builder system
-- `src/lib/test-data-builder-simple.test.ts` - Comprehensive test suite
-- `src/lib/test-data-builder-examples.ts` - 10 practical usage examples
-- `TEST_DATA_BUILDER_SUMMARY.md` - Complete documentation
-- **Failing**: 18 suites
-- **Total Tests**: 168
-- **Passing Tests**: 89
-- **Failing Tests**: 79
-
-## Test Configuration
-
-### Jest Configuration (`jest.config.js`)
-- **Environment**: jsdom (for React component testing)
-- **Transform**: TypeScript and JSX files using ts-jest with react-jsx
-- **Setup Files**: jest.setup.js for global mocks and configuration
-- **Coverage**: HTML and text reports
-- **Module Resolution**: Path mapping for @/ imports
-
-### Database Testing Strategy
-
-#### **Three-Layer Approach**
-
-**Layer 1: Mocked Database** (Fastest)
-- **Purpose**: Service/utility unit tests
-- **Use Case**: Business logic testing without database overhead
-- **Implementation**: Mock Drizzle ORM operations
-- **Pros**: Fastest execution, no setup needed
-- **Cons**: Doesn't test actual database interactions
-
-**Layer 2: In-Memory SQLite** (Balanced)
-- **Purpose**: Integration tests
-- **Use Case**: Test actual database operations and constraints
-- **Implementation**: SQLite in-memory with proper cleanup
-- **Pros**: Fast, isolated, tests real database behavior
-- **Cons**: Need careful cleanup to avoid constraint violations
-
-**Layer 3: Transaction-Based** (Most Robust)
-- **Purpose**: Critical path and complex workflow tests
-- **Use Case**: Test transactions, rollbacks, and complex operations
-- **Implementation**: Separate test database with transaction rollback
-- **Pros**: Perfect isolation, closest to production behavior
-- **Cons**: More complex setup, slightly slower
-
-#### **Implementation Priority**
-1. **Fix Layer 2** (In-Memory SQLite) - Immediate
-2. **Add Layer 3** (Transaction-based) - Next sprint
-3. **Add Layer 1** (Mocked) - Ongoing for unit tests
-
-### Test Database
-- **Type**: SQLite in-memory database
-- **Setup**: Automatic cleanup before and after tests
-- **Isolation**: Each test runs in isolation with fresh data
-- **Challenge**: Need better test data isolation to avoid constraint violations
-
-## Test Patterns
-
-### Database Tests
-```typescript
-describe('Entity Management', () => {
-  beforeAll(async () => {
-    // Clean up existing test data
-    await db.delete(table);
-  });
-
-  afterAll(async () => {
-    // Clean up test data
-    await db.delete(table);
-  });
-
-  it('should create and retrieve entity', async () => {
-    // Test implementation
-  });
-});
-```
-
-### API Route Tests
-```typescript
-describe('API Endpoint', () => {
-  it('should handle valid request', async () => {
-    const request = new NextRequest('http://localhost:3000/api/endpoint');
-    const response = await GET(request);
-    expect(response.status).toBe(200);
-  });
-
-  it('should handle invalid request', async () => {
-    const request = new NextRequest('http://localhost:3000/api/endpoint');
-    const response = await POST(request);
-    expect(response.status).toBe(400);
-  });
-});
-```
-
-### Session Tests
-```typescript
-describe('Session Management', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    sessionManager.clearSession();
-  });
-
-  it('should create session', () => {
-    sessionManager.createSession(user, token);
-    expect(mockLocalStorage.setItem).toHaveBeenCalled();
-  });
-});
-```
-
-## Mocking Strategy
-
-### Database Mocks
-- **Logger**: Mocked to prevent console output during tests
-- **Database**: Real SQLite database for integration testing
-- **Cleanup**: Automatic cleanup between tests
-
-### API Mocks
-- **NextRequest**: Real Next.js request objects
-- **Response**: Real Next.js response objects
-- **Database**: Real database operations
-
-### Session Mocks
-- **localStorage**: Mocked to test client-side storage
-- **Window**: Mocked for SSR compatibility testing
-
-## Coverage Goals
-
-### Current Coverage
-- **Database Layer**: 95%+ (schema, constraints, relationships)
-- **API Routes**: 90%+ (CRUD operations, validation, error handling)
-- **Authentication**: 85%+ (token logic, magic links)
-- **Session Management**: 90%+ (client-side storage, lifecycle)
-
-### Coverage Targets
-- **Overall**: 90%+ line coverage
-- **Critical Paths**: 95%+ line coverage
-- **Error Handling**: 100% coverage for error scenarios
-
-## Best Practices
-
-### Test Organization
-1. **Group related tests** using `describe` blocks
-2. **Use descriptive test names** that explain the expected behavior
-3. **Follow AAA pattern**: Arrange, Act, Assert
-4. **Keep tests independent** and isolated
-
-### Data Management
-1. **Clean up test data** in `beforeAll`/`afterAll` hooks
-2. **Use unique test data** to avoid conflicts
-3. **Reset state** between tests when needed
-4. **Mock external dependencies** appropriately
-
-### Error Testing
-1. **Test error conditions** explicitly
-2. **Verify error messages** and status codes
-3. **Test edge cases** and boundary conditions
-4. **Ensure graceful degradation**
-
-## Continuous Integration
-
-### GitHub Actions
-```yaml
-- name: Run Tests
-  run: npm test
-
-- name: Run Coverage
-  run: npm run test:coverage
-
-- name: Upload Coverage
-  uses: codecov/codecov-action@v3
-```
-
-### Pre-commit Hooks
-- Run tests before committing
-- Ensure coverage thresholds are met
-- Validate test structure and naming
-
-## Current Issues & Next Steps
-
-### Major Issues Identified
-
-#### 1. Database Constraint Violations (High Priority)
-- **Problem**: Tests failing due to unique constraint violations
-- **Affected**: `src/lib/auth.test.ts`, `src/lib/db.test.ts`
-- **Root Cause**: Test data not properly isolated between test runs
-- **Solution**: Implement proper test data cleanup and isolation
-
-#### 2. API Route Test Issues (High Priority)
-- **Problem**: NextRequest import errors in Jest environment
-- **Affected**: All API route tests
-- **Root Cause**: Jest not properly handling Next.js server components
-- **Solution**: Implement proper mocking strategy for NextRequest/NextResponse
-
-#### 3. Test Expectation Mismatches (Medium Priority)
-- **Problem**: Some component tests failing due to incorrect class name expectations
-- **Affected**: UI component tests
-- **Root Cause**: Tests written with assumptions about CSS class names
-- **Solution**: Update test expectations to match actual component output
-
-#### 4. Logger Test Issues (Low Priority)
-- **Problem**: Console.log mocking not working properly
-- **Affected**: `src/lib/logger.test.ts`
-- **Root Cause**: Mock setup issues
-- **Solution**: Fix console.log mocking implementation
-
-### Immediate Action Items
-
-1. **Fix Database Tests** (Priority 1)
-   - Implement proper test data isolation
-   - Add database cleanup between tests
-   - Use unique identifiers for test data
-
-2. **Fix API Route Tests** (Priority 1)
-   - Create proper NextRequest mocks
-   - Implement alternative testing strategy if needed
-   - Consider using supertest or similar for API testing
-
-3. **Update Component Tests** (Priority 2)
-   - Review and update test expectations
-   - Ensure tests match actual component behavior
-   - Add more comprehensive component tests
-
-4. **Improve Test Infrastructure** (Priority 3)
-   - Add test utilities for common operations
-   - Implement better error reporting
-   - Add test data factories
-
-## Troubleshooting
-
-### Common Issues
-
-#### Database Connection Errors
-- Ensure SQLite is properly configured
-- Check database file permissions
-- Verify schema is up to date
-
-#### Mock Issues
-- Clear mocks between tests
-- Ensure proper mock setup
-- Check mock return values
-
-#### Test Isolation
-- Clean up test data properly
-- Reset state between tests
-- Use unique identifiers for test data
-
-### Debugging Tests
-```bash
-# Run specific test with verbose output
-npm test -- --verbose src/lib/auth.test.ts
-
-# Run tests with debugging
-npm test -- --detectOpenHandles
-
-# Run tests with coverage and watch
-npm run test:coverage -- --watch
-```
-
-## Future Enhancements
-
-### Planned Test Additions
-1. **UI Component Tests**: React Testing Library for components
-2. **Integration Tests**: End-to-end user workflows
-3. **Performance Tests**: Load testing for API endpoints
-4. **Security Tests**: Authentication and authorization validation
-
-### Test Infrastructure
-1. **Test Data Factories**: Generate consistent test data
-2. **Custom Matchers**: Domain-specific assertions
-3. **Visual Regression Tests**: UI component snapshots
-4. **API Contract Tests**: Ensure API compatibility
-
-## Contributing
-
-### Adding New Tests
-1. **Follow existing patterns** and conventions
-2. **Add comprehensive coverage** for new features
-3. **Update documentation** when adding new test types
-4. **Ensure tests pass** before submitting PRs
-
-### Test Review Process
-1. **Review test coverage** for new features
-2. **Verify error handling** is tested
-3. **Check test isolation** and cleanup
-4. **Validate test naming** and organization 
-
-## Email Testing Strategy
-
-- **Unit/Integration Tests:** All email sending is mocked using Jest. No real emails are sent.
-- **Manual/E2E/Dev:** Emails are sent to Mailtrap using credentials from environment variables.
-- **How to assert:** Use Jest's mock assertions to check that sendMail was called with the correct arguments.
-- **How to view emails:** Log in to Mailtrap and check your inbox for emails sent during manual or E2E testing.
-
-### Environment Variables
-- `MAILTRAP_USER` and `MAILTRAP_PASS` must be set in your `.env.local` or CI/CD secrets for Mailtrap to work. 
-
-## Service Layer Test Policy: No Database Mocking
-
-**All service layer tests must use a real in-memory SQLite database and the test data builder system.**
-
-- Do **not** use `jest.mock('@/lib/db')`, `jest.mock('drizzle-orm')`, or similar to mock the database or ORM in any service layer test (e.g., `src/lib/services/*.test.ts`).
-- This is now enforced by a custom ESLint rule: `no-db-mocking-in-service-tests`.
-- Violations will cause lint errors and block PRs.
-- The only allowed approach is to use the real database and the builder system for all service logic tests.
-
-**Rationale:**
-- Ensures true integration coverage and catches schema/constraint issues early.
-- Prevents false positives/negatives from mocks that do not reflect real DB behavior.
-- Guarantees that all service logic is tested as it will run in production.
-
-**See also:**
-- [Test Data Builder System](#test-data-builder-system)
-- [ESLint Custom Rules](eslint-rules/) 
-
-## Logger Test Policy
-
-- Do **not** mock `console` or the logger in tests.
-- Always capture and assert on real console output in logger tests.
-- Logger tests must verify environment-specific output (development, test, production).
-- This is enforced by the custom ESLint rule: `no-logger-mocking-in-tests`.
-- Violations will cause lint errors and block PRs.
-
-**Rationale:**
-- Ensures logger tests reflect real runtime behavior.
-- Prevents false positives/negatives from mocks.
-- Guarantees that logging is tested as it will run in production and development.
-
-**See also:**
-- [Logger Utility](src/lib/logger.ts)
-- [Logger Tests](src/lib/logger.test.ts)
-- [ESLint Custom Rules](eslint-rules/) 
+## Code Review Checklist
+
+When reviewing tests, ensure:
+
+- [ ] Uses simple factory functions, not complex builders
+- [ ] No hidden state or side effects
+- [ ] Clear separation of concerns
+- [ ] Proper cleanup in beforeEach/afterEach
+- [ ] Tests are independent and can run in any order
+- [ ] Uses composition over inheritance
+- [ ] Easy to understand and maintain
+- [ ] No mocking of database in service layer tests
+- [ ] Real database operations for integration tests
+
+## Resources
+
+- [Testing Patterns Guide](TESTING_PATTERNS.md) - Detailed patterns and principles
+- [Team Training Guide](TEAM_TRAINING.md) - Training materials for the team
+- [Clean Test Utilities](../src/lib/test-utils-clean.ts) - Implementation of clean test utilities
+- [Example Tests](../src/lib/test-utils-clean.test.ts) - Examples of using the clean patterns 
