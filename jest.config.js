@@ -3,6 +3,7 @@ module.exports = {
   testEnvironment: "jsdom",
   preset: "ts-jest/presets/default-esm",
   extensionsToTreatAsEsm: [".ts", ".tsx"],
+  maxWorkers: 1, // Run tests sequentially to avoid database conflicts
   transform: {
     "^.+\\.(ts|tsx)$": ["ts-jest", {
       useESM: true,

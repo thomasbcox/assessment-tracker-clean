@@ -119,8 +119,6 @@ export const invitations = sqliteTable('invitations', {
   expiresAt: text('expires_at').notNull(),
   reminderCount: integer('reminder_count').default(0),
   lastReminderSent: text('last_reminder_sent'),
-  invitedRole: text('invited_role').notNull().default('user'),
-  dueDate: text('due_date'),
 });
 
 export const magicLinks = sqliteTable('magic_links', {

@@ -10,8 +10,6 @@ export interface InvitationData {
   email: string;
   firstName?: string;
   lastName?: string;
-  invitedRole: string;
-  dueDate?: string;
 }
 
 export interface Invitation {
@@ -29,8 +27,6 @@ export interface Invitation {
   expiresAt: string;
   reminderCount: number;
   lastReminderSent: string | null;
-  invitedRole: string;
-  dueDate: string | null;
 }
 
 export class InvitationsService {
@@ -81,8 +77,6 @@ export class InvitationsService {
         expiresAt,
         reminderCount: 0,
         lastReminderSent: null,
-        invitedRole: data.invitedRole,
-        dueDate: data.dueDate || null,
       }).returning();
 
       const { reminderCount, ...rest } = invitation;
@@ -189,7 +183,7 @@ export class InvitationsService {
             email: userData.email.toLowerCase(),
             firstName: userData.firstName,
             lastName: userData.lastName,
-            role: inv.invitedRole || 'user',
+            role: 'user', // Default role, as invitedRole is removed
             isActive: 1,
             createdAt: new Date().toISOString(),
           })
@@ -204,7 +198,6 @@ export class InvitationsService {
               periodId: inv.periodId,
               templateId: inv.templateId,
               status: 'pending',
-              dueDate: inv.dueDate || null,
               createdAt: new Date().toISOString(),
             })
             .returning();

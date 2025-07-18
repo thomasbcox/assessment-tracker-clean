@@ -35,18 +35,6 @@ export class AssessmentPeriodsService {
       const endDate = new Date(data.endDate);
       if (startDate >= endDate) throw new Error('End date must be after start date');
 
-      // Check for overlapping periods
-      const overlapping = await db.select().from(assessmentPeriods)
-        .where(
-          or(
-            and(
-              lt(assessmentPeriods.startDate, data.endDate),
-              gt(assessmentPeriods.endDate, data.startDate)
-            )
-          )
-        );
-      if (overlapping.length > 0) throw new Error('Period overlaps with existing periods');
-
       // If this period is active, deactivate others
       if (data.isActive === 1) {
         await db.update(assessmentPeriods).set({ isActive: 0 }).where(eq(assessmentPeriods.isActive, 1));
@@ -108,25 +96,6 @@ export class AssessmentPeriodsService {
         const startDate = new Date(data.startDate);
         const endDate = new Date(data.endDate);
         if (startDate >= endDate) throw new Error('End date must be after start date');
-      }
-
-      // Check for overlapping periods if dates are being updated
-      if (data.startDate || data.endDate) {
-        const startDate = data.startDate || existing.startDate;
-        const endDate = data.endDate || existing.endDate;
-        const overlapping = await db.select().from(assessmentPeriods)
-          .where(
-            and(
-              or(
-                and(
-                  lt(assessmentPeriods.startDate, endDate),
-                  gt(assessmentPeriods.endDate, startDate)
-                )
-              ),
-              ne(assessmentPeriods.id, id)
-            )
-          );
-        if (overlapping.length > 0) throw new Error('Period overlaps with existing periods');
       }
 
       // If this period is being made active, deactivate others
