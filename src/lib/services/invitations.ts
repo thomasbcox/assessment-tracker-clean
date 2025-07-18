@@ -148,87 +148,90 @@ export class InvitationsService {
     password: string;
   }): Promise<{ success: boolean; userId?: string; assessmentInstanceId?: number; error?: string }> {
     try {
-      const result = await db.transaction(async (tx) => {
-        // Get invitation
-        const invitationArr = await tx
-          .select()
-          .from(invitations)
-          .where(eq(invitations.id, invitationId))
-          .limit(1);
-        if (!invitationArr || invitationArr.length === 0) {
-          throw new Error('Invitation not found');
-        }
-        const inv = invitationArr[0];
-        if (inv.status !== 'pending') {
-          throw new Error('Invitation has already been used or expired');
-        }
-        if (inv.email.toLowerCase() !== userData.email.toLowerCase()) {
-          throw new Error('Email does not match invitation');
-        }
-        // Check if user already exists
-        const existingUser = await tx
-          .select()
-          .from(users)
-          .where(eq(users.email, userData.email.toLowerCase()))
-          .limit(1);
-        if (existingUser.length > 0) {
-          throw new Error('User account already exists with this email');
-        }
-        // Create user account
-        const userId = crypto.randomUUID();
-        const [newUser] = await tx
-          .insert(users)
+      // Get invitation
+      const invitationArr = await db
+        .select()
+        .from(invitations)
+        .where(eq(invitations.id, invitationId))
+        .limit(1);
+      if (!invitationArr || invitationArr.length === 0) {
+        return { success: false, error: 'Invitation not found' };
+      }
+      const inv = invitationArr[0];
+      if (inv.status !== 'pending') {
+        return { success: false, error: 'Invitation has already been used or expired' };
+      }
+      if (inv.email.toLowerCase() !== userData.email.toLowerCase()) {
+        return { success: false, error: 'Email does not match invitation' };
+      }
+      
+      // Check if user already exists
+      const existingUser = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, userData.email.toLowerCase()))
+        .limit(1);
+      if (existingUser.length > 0) {
+        return { success: false, error: 'User account already exists with this email' };
+      }
+      
+      // Create user account
+      const userId = crypto.randomUUID();
+      const [newUser] = await db
+        .insert(users)
+        .values({
+          id: userId,
+          email: userData.email.toLowerCase(),
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          role: 'user', // Default role, as invitedRole is removed
+          isActive: 1,
+          createdAt: new Date().toISOString(),
+        })
+        .returning();
+      
+      // Create assessment instance if template is specified
+      let assessmentInstanceId: number | undefined;
+      if (inv.templateId) {
+        const [assessmentInstance] = await db
+          .insert(assessmentInstances)
           .values({
-            id: userId,
-            email: userData.email.toLowerCase(),
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-            role: 'user', // Default role, as invitedRole is removed
-            isActive: 1,
+            userId: userId,
+            periodId: inv.periodId,
+            templateId: inv.templateId,
+            status: 'pending',
             createdAt: new Date().toISOString(),
           })
           .returning();
-        // Create assessment instance if template is specified
-        let assessmentInstanceId: number | undefined;
-        if (inv.templateId) {
-          const [assessmentInstance] = await tx
-            .insert(assessmentInstances)
-            .values({
-              userId: userId,
-              periodId: inv.periodId,
-              templateId: inv.templateId,
-              status: 'pending',
-              createdAt: new Date().toISOString(),
-            })
-            .returning();
-          assessmentInstanceId = assessmentInstance.id;
-        }
-        // Create manager relationship
-        if (inv.managerId) {
-          await tx
-            .insert(managerRelationships)
-            .values({
-              managerId: inv.managerId,
-              subordinateId: userId,
-              periodId: inv.periodId,
-              createdAt: new Date().toISOString(),
-            });
-        }
-        // Update invitation status
-        await tx
-          .update(invitations)
-          .set({
-            status: 'accepted',
-            acceptedAt: new Date().toISOString(),
-          })
-          .where(eq(invitations.id, invitationId));
-        return {
-          success: true,
-          userId,
-          assessmentInstanceId,
-        };
-      });
-      return result;
+        assessmentInstanceId = assessmentInstance.id;
+      }
+      
+      // Create manager relationship
+      if (inv.managerId) {
+        await db
+          .insert(managerRelationships)
+          .values({
+            managerId: inv.managerId,
+            subordinateId: userId,
+            periodId: inv.periodId,
+            createdAt: new Date().toISOString(),
+          });
+      }
+      
+      // Update invitation status
+      await db
+        .update(invitations)
+        .set({
+          status: 'accepted',
+          acceptedAt: new Date().toISOString(),
+        })
+        .where(eq(invitations.id, invitationId));
+      
+      return {
+        success: true,
+        userId,
+        assessmentInstanceId,
+      };
     } catch (error) {
       logger.error('Error accepting invitation', { error, invitationId });
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
