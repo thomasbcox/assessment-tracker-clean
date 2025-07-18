@@ -320,33 +320,4 @@ export function createErrorResponse(error: ServiceError) {
   };
 }
 
-// ============================================================================
-// EXPORTS
-// ============================================================================
-
-export {
-  ErrorCodes,
-  HttpStatusCodes,
-  createValidationError,
-  createNotFoundError,
-  createConflictError,
-  createUnauthorizedError,
-  createForbiddenError,
-  createDatabaseError,
-  createBusinessRuleError,
-  createRateLimitError,
-  isServiceError,
-  handleServiceError,
-  getErrorResponse,
-  validateRequired,
-  validateEmail,
-  validateStringLength,
-  validateEnum,
-  validateNumberRange,
-  validateUserRole,
-  validateAssessmentStatus,
-  validateQuestionType,
-  logServiceError,
-  createSuccessResponse,
-  createErrorResponse
-}; 
+ 

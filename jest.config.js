@@ -20,6 +20,7 @@ module.exports = {
         resolveJsonModule: true,
         isolatedModules: true,
         incremental: true,
+        types: ["jest", "@testing-library/jest-dom"],
         paths: {
           "@/*": ["./src/*"]
         }
@@ -41,6 +42,7 @@ module.exports = {
         resolveJsonModule: true,
         isolatedModules: true,
         incremental: true,
+        types: ["jest", "@testing-library/jest-dom"],
         paths: {
           "@/*": ["./src/*"]
         }

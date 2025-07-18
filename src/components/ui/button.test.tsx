@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from '@jest/globals';
+import { describe, it, expect } from '@jest/globals';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Button } from './button';
 
@@ -103,21 +103,21 @@ describe('Button', () => {
   });
 
   describe('Interactions', () => {
-    it('should call onClick when clicked', () => {
-      const handleClick = vi.fn();
-      render(<Button onClick={handleClick}>Clickable Button</Button>);
+    it('should handle click events', () => {
+      const handleClick = jest.fn();
+      render(<Button onClick={handleClick}>Click Me</Button>);
       
-      const button = screen.getByRole('button', { name: 'Clickable Button' });
+      const button = screen.getByRole('button');
       fireEvent.click(button);
       
       expect(handleClick).toHaveBeenCalledTimes(1);
     });
 
-    it('should not call onClick when disabled', () => {
-      const handleClick = vi.fn();
-      render(<Button disabled onClick={handleClick}>Disabled Button</Button>);
+    it('should handle disabled click events', () => {
+      const handleClick = jest.fn();
+      render(<Button onClick={handleClick} disabled>Click Me</Button>);
       
-      const button = screen.getByRole('button', { name: 'Disabled Button' });
+      const button = screen.getByRole('button');
       fireEvent.click(button);
       
       expect(handleClick).not.toHaveBeenCalled();

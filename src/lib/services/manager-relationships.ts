@@ -1,5 +1,5 @@
 import { db, managerRelationships, users, assessmentPeriods } from '@/lib/db';
-import { eq, and } from 'drizzle-orm';
+import { eq, desc, asc, lt, gt, or, and, ne } from 'drizzle-orm';
 import { logger } from '@/lib/logger';
 
 export interface ManagerRelationshipData {
@@ -76,17 +76,18 @@ export class ManagerRelationshipsService {
 
   static async getSubordinatesByManager(managerId: string, periodId?: number): Promise<ManagerRelationship[]> {
     try {
-      let query = db.select().from(managerRelationships).where(eq(managerRelationships.managerId, managerId));
+      let query = db.select().from(managerRelationships);
       
       if (periodId) {
-        query = query.where(and(
+        const relationships = await query.where(and(
           eq(managerRelationships.managerId, managerId),
           eq(managerRelationships.periodId, periodId)
-        ));
+        )).orderBy(managerRelationships.createdAt);
+        return relationships.map(relationship => ({ ...relationship, createdAt: relationship.createdAt || '' }));
+      } else {
+        const relationships = await query.where(eq(managerRelationships.managerId, managerId)).orderBy(managerRelationships.createdAt);
+        return relationships.map(relationship => ({ ...relationship, createdAt: relationship.createdAt || '' }));
       }
-
-      const relationships = await query.orderBy(managerRelationships.createdAt);
-      return relationships.map(relationship => ({ ...relationship, createdAt: relationship.createdAt || '' }));
     } catch (error) {
       logger.dbError('fetch subordinates by manager', error as Error, { managerId, periodId });
       throw error;
@@ -95,18 +96,20 @@ export class ManagerRelationshipsService {
 
   static async getManagerBySubordinate(subordinateId: string, periodId?: number): Promise<ManagerRelationship | null> {
     try {
-      let query = db.select().from(managerRelationships).where(eq(managerRelationships.subordinateId, subordinateId));
+      let query = db.select().from(managerRelationships);
       
       if (periodId) {
-        query = query.where(and(
+        const [relationship] = await query.where(and(
           eq(managerRelationships.subordinateId, subordinateId),
           eq(managerRelationships.periodId, periodId)
-        ));
+        )).limit(1);
+        if (!relationship) return null;
+        return { ...relationship, createdAt: relationship.createdAt || '' };
+      } else {
+        const [relationship] = await query.where(eq(managerRelationships.subordinateId, subordinateId)).limit(1);
+        if (!relationship) return null;
+        return { ...relationship, createdAt: relationship.createdAt || '' };
       }
-
-      const [relationship] = await query.limit(1);
-      if (!relationship) return null;
-      return { ...relationship, createdAt: relationship.createdAt || '' };
     } catch (error) {
       logger.dbError('fetch manager by subordinate', error as Error, { subordinateId, periodId });
       throw error;
@@ -158,7 +161,7 @@ export class ManagerRelationshipsService {
           .where(and(
             eq(managerRelationships.subordinateId, newSubordinateId),
             eq(managerRelationships.periodId, newPeriodId),
-            eq(managerRelationships.id, id).not()
+            ne(managerRelationships.id, id)
           ))
           .limit(1);
         if (conflict.length > 0) throw new Error('Subordinate already has a manager for this period');

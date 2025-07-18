@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from '@jest/globals';
+import { describe, it, expect } from '@jest/globals';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
 
@@ -7,7 +7,7 @@ describe('Select Component', () => {
     render(
       <Select>
         <SelectTrigger>
-          <SelectValue placeholder="Select an option" />
+          <SelectValue>Select an option</SelectValue>
         </SelectTrigger>
       </Select>
     );
@@ -34,7 +34,7 @@ describe('Select Component', () => {
     render(
       <Select>
         <SelectTrigger>
-          <SelectValue placeholder="Select an option" />
+          <SelectValue>Select an option</SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="option1">Option 1</SelectItem>
@@ -52,7 +52,7 @@ describe('Select Component', () => {
     render(
       <Select>
         <SelectTrigger className="custom-trigger">
-          <SelectValue placeholder="Select an option" />
+          <SelectValue>Select an option</SelectValue>
         </SelectTrigger>
       </Select>
     );
@@ -65,7 +65,7 @@ describe('Select Component', () => {
     render(
       <Select>
         <SelectTrigger>
-          <SelectValue placeholder="Select an option" />
+          <SelectValue>Select an option</SelectValue>
         </SelectTrigger>
         <SelectContent className="custom-content">
           <SelectItem value="option1">Option 1</SelectItem>
@@ -81,7 +81,7 @@ describe('Select Component', () => {
     render(
       <Select>
         <SelectTrigger>
-          <SelectValue placeholder="Select an option" />
+          <SelectValue>Select an option</SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="option1" className="custom-item">Option 1</SelectItem>
@@ -97,7 +97,7 @@ describe('Select Component', () => {
     render(
       <Select disabled>
         <SelectTrigger>
-          <SelectValue placeholder="Select an option" />
+          <SelectValue>Select an option</SelectValue>
         </SelectTrigger>
       </Select>
     );
@@ -110,7 +110,7 @@ describe('Select Component', () => {
     render(
       <Select required>
         <SelectTrigger>
-          <SelectValue placeholder="Select an option" />
+          <SelectValue>Select an option</SelectValue>
         </SelectTrigger>
       </Select>
     );
@@ -124,7 +124,7 @@ describe('Select Component', () => {
     render(
       <Select>
         <SelectTrigger ref={ref}>
-          <SelectValue placeholder="Select an option" />
+          <SelectValue>Select an option</SelectValue>
         </SelectTrigger>
       </Select>
     );
@@ -136,7 +136,7 @@ describe('Select Component', () => {
     render(
       <Select>
         <SelectTrigger aria-label="Choose an option">
-          <SelectValue placeholder="Select an option" />
+          <SelectValue>Select an option</SelectValue>
         </SelectTrigger>
       </Select>
     );
@@ -149,7 +149,7 @@ describe('Select Component', () => {
     render(
       <Select>
         <SelectTrigger>
-          <SelectValue placeholder="Select an option" />
+          <SelectValue>Select an option</SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="option1">Option 1</SelectItem>
