@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AssessmentTemplatesService } from '@/lib/services/assessment-templates';
-import { AssessmentQuestionsService } from '@/lib/services/assessment-questions';
+import { AssessmentPeriodsService } from '@/lib/services/assessment-periods';
 import { AssessmentInstancesService } from '@/lib/services/assessment-instances';
+import { ManagerRelationshipsService } from '@/lib/services/manager-relationships';
 import { InvitationsService } from '@/lib/services/invitations';
 import { ServiceError } from '@/lib/types/service-interfaces';
 
@@ -11,25 +11,25 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const templateId = parseInt(id);
+    const periodId = parseInt(id);
     
-    if (isNaN(templateId)) {
+    if (isNaN(periodId)) {
       return NextResponse.json(
-        { error: 'Invalid template ID' },
+        { error: 'Invalid period ID' },
         { status: 400 }
       );
     }
 
-    const template = await AssessmentTemplatesService.getTemplateById(templateId.toString());
+    const period = await AssessmentPeriodsService.getPeriodById(periodId);
     
-    if (!template) {
+    if (!period) {
       return NextResponse.json(
-        { error: 'Assessment template not found' },
+        { error: 'Assessment period not found' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(template);
+    return NextResponse.json(period);
   } catch (error) {
     if (error instanceof ServiceError) {
       return NextResponse.json(
@@ -51,25 +51,25 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const templateId = parseInt(id);
+    const periodId = parseInt(id);
     
-    if (isNaN(templateId)) {
+    if (isNaN(periodId)) {
       return NextResponse.json(
-        { error: 'Invalid template ID' },
+        { error: 'Invalid period ID' },
         { status: 400 }
       );
     }
 
     const body = await request.json();
     
-    const updatedTemplate = await AssessmentTemplatesService.updateTemplate(templateId.toString(), {
+    const updatedPeriod = await AssessmentPeriodsService.updatePeriod(periodId, {
       name: body.name,
-      version: body.version,
-      description: body.description,
-      assessmentTypeId: body.assessmentTypeId,
+      startDate: body.startDate,
+      endDate: body.endDate,
+      isActive: body.isActive,
     });
 
-    return NextResponse.json(updatedTemplate);
+    return NextResponse.json(updatedPeriod);
   } catch (error) {
     if (error instanceof ServiceError) {
       return NextResponse.json(
@@ -91,31 +91,31 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const templateId = parseInt(id);
+    const periodId = parseInt(id);
     
-    if (isNaN(templateId)) {
+    if (isNaN(periodId)) {
       return NextResponse.json(
-        { error: 'Invalid template ID' },
+        { error: 'Invalid period ID' },
         { status: 400 }
       );
     }
 
-    // Check for existing questions
-    const questions = await AssessmentQuestionsService.getQuestionsByTemplate(templateId);
+    // Check for existing assessment instances
+    const instances = await AssessmentInstancesService.getInstancesByPeriod(periodId);
     
-    // Check for existing instances
-    const instances = await AssessmentInstancesService.getInstancesByTemplate(templateId);
+    // Check for existing manager relationships
+    const relationships = await ManagerRelationshipsService.getRelationshipsByPeriod(periodId);
     
     // Check for existing invitations
-    const invitations = await InvitationsService.getInvitationsByTemplate(templateId);
+    const invitations = await InvitationsService.getInvitationsByPeriod(periodId);
     
     // Build error message if any child records exist
     const childRecords = [];
-    if (questions.length > 0) {
-      childRecords.push(`${questions.length} assessment question(s)`);
-    }
     if (instances.length > 0) {
       childRecords.push(`${instances.length} assessment instance(s)`);
+    }
+    if (relationships.length > 0) {
+      childRecords.push(`${relationships.length} manager relationship(s)`);
     }
     if (invitations.length > 0) {
       childRecords.push(`${invitations.length} invitation(s)`);
@@ -124,23 +124,23 @@ export async function DELETE(
     if (childRecords.length > 0) {
       return NextResponse.json(
         { 
-          error: 'Cannot delete assessment template with existing child records',
+          error: 'Cannot delete assessment period with existing child records',
           childRecords,
-          totalChildRecords: questions.length + instances.length + invitations.length,
-          message: `Please remove all ${childRecords.join(', ')} before deleting this template.`
+          totalChildRecords: instances.length + relationships.length + invitations.length,
+          message: `Please remove all ${childRecords.join(', ')} before deleting this period.`
         },
         { status: 400 }
       );
     }
 
-    // Delete the template (only if no child records exist)
+    // Delete the period (only if no child records exist)
     try {
-      await AssessmentTemplatesService.deleteTemplate(templateId.toString());
-      return NextResponse.json({ message: 'Assessment template deleted successfully' });
+      await AssessmentPeriodsService.deletePeriod(periodId);
+      return NextResponse.json({ message: 'Assessment period deleted successfully' });
     } catch (error) {
-      console.error('Error deleting assessment template:', error);
+      console.error('Error deleting assessment period:', error);
       return NextResponse.json(
-        { error: 'Failed to delete assessment template' },
+        { error: 'Failed to delete assessment period' },
         { status: 500 }
       );
     }

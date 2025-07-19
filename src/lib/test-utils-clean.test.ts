@@ -3,8 +3,8 @@ import {
   createTestUser, 
   createTestAssessmentType, 
   createTestAssessmentPeriod,
-  createTestAssessmentSetup,
-  createTestUserWithAssessment,
+  createCompleteAssessmentSetup,
+  createManagerSubordinateSetup,
   cleanup,
   withCleanup,
   createMultipleUsers
@@ -86,7 +86,7 @@ describe('Clean Test Utilities', () => {
 
   describe('Complex Relationships', () => {
     it('should create assessment setup with all related entities', async () => {
-      const setup = await createTestAssessmentSetup({
+      const setup = await createCompleteAssessmentSetup({
         type: { name: 'Team Assessment' },
         period: { name: 'Q1 2024', isActive: 1 },
         template: { name: 'Team Leadership Template', version: '1.0' },
@@ -102,12 +102,10 @@ describe('Clean Test Utilities', () => {
     });
 
     it('should create user with assessment instance', async () => {
-      const result = await createTestUserWithAssessment({
+      const result = await createCompleteAssessmentSetup({
         user: { email: 'employee@example.com', role: 'user' },
-        assessmentSetup: {
-          type: { name: 'Performance Review' },
-          period: { name: 'Q1 2024', isActive: 1 }
-        },
+        type: { name: 'Performance Review' },
+        period: { name: 'Q1 2024', isActive: 1 },
         instance: { status: 'in_progress' }
       });
       

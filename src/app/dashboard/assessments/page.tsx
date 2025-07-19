@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout';
 import { sessionManager } from '@/lib/session';
+import { useRouter } from 'next/navigation';
 
 interface User {
   id: string;
@@ -31,6 +32,7 @@ export default function AssessmentsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [filter, setFilter] = useState<'all' | 'draft' | 'active' | 'completed' | 'archived' | 'pending'>('all');
+  const router = useRouter();
 
   useEffect(() => {
     const user = sessionManager.getUser();
@@ -188,8 +190,11 @@ export default function AssessmentsPage() {
               </div>
 
               <div className="flex gap-2 mt-4 pt-4 border-t border-brand-dark-blue/10">
-                <button className="flex-1 btn-modern bg-brand-medium-blue text-white hover:bg-brand-medium-blue/90 text-sm">
-                  View Details
+                <button 
+                  onClick={() => router.push(`/assessment/${assessment.id}`)}
+                  className="flex-1 btn-modern bg-brand-medium-blue text-white hover:bg-brand-medium-blue/90 text-sm"
+                >
+                  {assessment.status === 'completed' ? 'View Results' : 'Take Assessment'}
                 </button>
                 <button className="flex-1 btn-modern bg-brand-dark-teal text-white hover:bg-brand-dark-teal/90 text-sm">
                   Edit

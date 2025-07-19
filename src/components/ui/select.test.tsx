@@ -7,7 +7,7 @@ describe('Select Component', () => {
     render(
       <Select>
         <SelectTrigger>
-          <SelectValue>Select an option</SelectValue>
+          <SelectValue placeholder="Select an option" />
         </SelectTrigger>
       </Select>
     );
@@ -30,11 +30,11 @@ describe('Select Component', () => {
     expect(trigger).toBeInTheDocument();
   });
 
-  it('should render select content with items', () => {
+  it('should render select content with items when opened', () => {
     render(
       <Select>
         <SelectTrigger>
-          <SelectValue>Select an option</SelectValue>
+          <SelectValue placeholder="Select an option" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="option1">Option 1</SelectItem>
@@ -46,13 +46,21 @@ describe('Select Component', () => {
     
     const trigger = screen.getByRole('combobox');
     expect(trigger).toBeInTheDocument();
+    
+    // Click to open
+    fireEvent.click(trigger);
+    
+    // Check that items are rendered
+    expect(screen.getByText('Option 1')).toBeInTheDocument();
+    expect(screen.getByText('Option 2')).toBeInTheDocument();
+    expect(screen.getByText('Option 3')).toBeInTheDocument();
   });
 
   it('should apply custom className to trigger', () => {
     render(
       <Select>
         <SelectTrigger className="custom-trigger">
-          <SelectValue>Select an option</SelectValue>
+          <SelectValue placeholder="Select an option" />
         </SelectTrigger>
       </Select>
     );
@@ -65,7 +73,7 @@ describe('Select Component', () => {
     render(
       <Select>
         <SelectTrigger>
-          <SelectValue>Select an option</SelectValue>
+          <SelectValue placeholder="Select an option" />
         </SelectTrigger>
         <SelectContent className="custom-content">
           <SelectItem value="option1">Option 1</SelectItem>
@@ -74,14 +82,17 @@ describe('Select Component', () => {
     );
     
     const trigger = screen.getByRole('combobox');
-    expect(trigger).toBeInTheDocument();
+    fireEvent.click(trigger);
+    
+    const content = screen.getByRole('listbox');
+    expect(content).toHaveClass('custom-content');
   });
 
   it('should apply custom className to items', () => {
     render(
       <Select>
         <SelectTrigger>
-          <SelectValue>Select an option</SelectValue>
+          <SelectValue placeholder="Select an option" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="option1" className="custom-item">Option 1</SelectItem>
@@ -90,33 +101,37 @@ describe('Select Component', () => {
     );
     
     const trigger = screen.getByRole('combobox');
-    expect(trigger).toBeInTheDocument();
+    fireEvent.click(trigger);
+    
+    const item = screen.getByText('Option 1');
+    expect(item).toHaveClass('custom-item');
   });
 
   it('should handle disabled state', () => {
     render(
       <Select disabled>
         <SelectTrigger>
-          <SelectValue>Select an option</SelectValue>
+          <SelectValue placeholder="Select an option" />
         </SelectTrigger>
       </Select>
     );
     
     const trigger = screen.getByRole('combobox');
     expect(trigger).toBeDisabled();
+    expect(trigger).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('should handle required state', () => {
     render(
       <Select required>
         <SelectTrigger>
-          <SelectValue>Select an option</SelectValue>
+          <SelectValue placeholder="Select an option" />
         </SelectTrigger>
       </Select>
     );
     
     const trigger = screen.getByRole('combobox');
-    expect(trigger).toBeRequired();
+    expect(trigger).toHaveAttribute('aria-required', 'true');
   });
 
   it('should forward ref correctly', () => {
@@ -124,7 +139,7 @@ describe('Select Component', () => {
     render(
       <Select>
         <SelectTrigger ref={ref}>
-          <SelectValue>Select an option</SelectValue>
+          <SelectValue placeholder="Select an option" />
         </SelectTrigger>
       </Select>
     );
@@ -136,7 +151,7 @@ describe('Select Component', () => {
     render(
       <Select>
         <SelectTrigger aria-label="Choose an option">
-          <SelectValue>Select an option</SelectValue>
+          <SelectValue placeholder="Select an option" />
         </SelectTrigger>
       </Select>
     );
@@ -149,7 +164,7 @@ describe('Select Component', () => {
     render(
       <Select>
         <SelectTrigger>
-          <SelectValue>Select an option</SelectValue>
+          <SelectValue placeholder="Select an option" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="option1">Option 1</SelectItem>
@@ -163,5 +178,36 @@ describe('Select Component', () => {
     
     const trigger = screen.getByRole('combobox');
     expect(trigger).toBeInTheDocument();
+    
+    fireEvent.click(trigger);
+    
+    expect(screen.getByText('Option 1')).toBeInTheDocument();
+    expect(screen.getByText('Option 2')).toBeInTheDocument();
+    expect(screen.getByText('Option 3')).toBeInTheDocument();
+    expect(screen.getByText('Option 4')).toBeInTheDocument();
+    expect(screen.getByText('Option 5')).toBeInTheDocument();
+  });
+
+  it('should handle value selection', () => {
+    const onValueChange = jest.fn();
+    render(
+      <Select onValueChange={onValueChange}>
+        <SelectTrigger>
+          <SelectValue placeholder="Select an option" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="option1">Option 1</SelectItem>
+          <SelectItem value="option2">Option 2</SelectItem>
+        </SelectContent>
+      </Select>
+    );
+    
+    const trigger = screen.getByRole('combobox');
+    fireEvent.click(trigger);
+    
+    const option1 = screen.getByText('Option 1');
+    fireEvent.click(option1);
+    
+    expect(onValueChange).toHaveBeenCalledWith('option1');
   });
 }); 

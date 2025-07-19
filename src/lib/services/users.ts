@@ -213,6 +213,17 @@ export async function deactivateUser(userId: string): Promise<User> {
   }
 }
 
+export async function deleteUser(userId: string): Promise<void> {
+  try {
+    validateRequired(userId, 'userId');
+    
+    await db.delete(users).where(eq(users.id, userId));
+  } catch (error) {
+    logServiceError(error as any, { userId });
+    throw createDatabaseError('Failed to delete user', { userId });
+  }
+}
+
 export async function getAllUsers(): Promise<User[]> {
   try {
     const allUsers = await db

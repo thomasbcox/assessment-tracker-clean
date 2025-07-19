@@ -148,6 +148,8 @@ export class AssessmentQuestionsService {
     }
   }
 
+
+
   static async deactivateQuestion(id: number): Promise<AssessmentQuestion> {
     try {
       const [deactivated] = await db.update(assessmentQuestions)

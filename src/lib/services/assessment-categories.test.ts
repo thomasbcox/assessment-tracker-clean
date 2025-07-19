@@ -262,20 +262,27 @@ describe('Assessment Categories Service', () => {
   });
 
   describe('deleteCategory', () => {
-    it('should delete category', async () => {
+    it('should delete a category successfully', async () => {
       const assessmentType = await getOrCreateAssessmentType();
+      const timestamp = Date.now();
       
       const categoryData = {
         assessmentTypeId: assessmentType.id,
-        name: `Test Category ${Date.now()}`,
+        name: `Test Category ${timestamp}`,
         displayOrder: 1
       };
 
-      const createdCategory = await AssessmentCategoriesService.createCategory(categoryData);
-      await AssessmentCategoriesService.deleteCategory(createdCategory.id);
+      const category = await AssessmentCategoriesService.createCategory(categoryData);
+      
+      await AssessmentCategoriesService.deleteCategory(category.id);
+      
+      const deletedCategory = await AssessmentCategoriesService.getCategoryById(category.id);
+      expect(deletedCategory).toBeNull();
+    });
 
-      const category = await AssessmentCategoriesService.getCategoryById(createdCategory.id);
-      expect(category).toBeNull();
+    it('should not throw error when deleting non-existent category', async () => {
+      // Deleting a non-existent category should not throw an error
+      await expect(AssessmentCategoriesService.deleteCategory(999)).resolves.toBeUndefined();
     });
   });
 

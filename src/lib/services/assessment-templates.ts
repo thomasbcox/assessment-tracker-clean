@@ -196,6 +196,15 @@ export class AssessmentTemplatesService {
     }
   }
 
+  static async deleteTemplate(id: string): Promise<void> {
+    try {
+      await db.delete(assessmentTemplates).where(eq(assessmentTemplates.id, parseInt(id)));
+    } catch (error) {
+      logger.dbError('delete assessment template', error as Error, { templateId: id });
+      throw error;
+    }
+  }
+
   static async createTemplate(data: CreateTemplateData): Promise<TemplateWithTypeName> {
     try {
       // Validate required fields

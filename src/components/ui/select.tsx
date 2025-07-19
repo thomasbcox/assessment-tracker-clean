@@ -1,77 +1,178 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
-export interface SelectProps
-  extends React.SelectHTMLAttributes<HTMLSelectElement> {}
+export interface SelectProps {
+  value?: string
+  defaultValue?: string
+  onValueChange?: (value: string) => void
+  disabled?: boolean
+  required?: boolean
+  children: React.ReactNode
+  className?: string
+}
 
-const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, children, ...props }, ref) => {
+export interface SelectTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children: React.ReactNode
+  className?: string
+}
+
+export interface SelectContentProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode
+  className?: string
+}
+
+export interface SelectItemProps extends React.HTMLAttributes<HTMLDivElement> {
+  value: string
+  children: React.ReactNode
+  className?: string
+  disabled?: boolean
+}
+
+export interface SelectValueProps extends React.HTMLAttributes<HTMLSpanElement> {
+  placeholder?: string
+  children?: React.ReactNode
+  className?: string
+}
+
+const SelectContext = React.createContext<{
+  value?: string
+  onValueChange?: (value: string) => void
+  disabled?: boolean
+  required?: boolean
+  isOpen: boolean
+  setIsOpen: (open: boolean) => void
+}>({
+  isOpen: false,
+  setIsOpen: () => {},
+})
+
+const Select = React.forwardRef<HTMLDivElement, SelectProps>(
+  ({ value, defaultValue, onValueChange, disabled, required, children, className, ...props }, ref) => {
+    const [isOpen, setIsOpen] = React.useState(false)
+    const [internalValue, setInternalValue] = React.useState(defaultValue || value || "")
+    
+    const handleValueChange = (newValue: string) => {
+      setInternalValue(newValue)
+      onValueChange?.(newValue)
+      setIsOpen(false)
+    }
+
     return (
-      <select
-        className={cn(
-          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-          className
-        )}
-        ref={ref}
-        {...props}
-      >
-        {children}
-      </select>
+      <SelectContext.Provider value={{
+        value: value !== undefined ? value : internalValue,
+        onValueChange: handleValueChange,
+        disabled,
+        required,
+        isOpen,
+        setIsOpen,
+      }}>
+        <div 
+          className={cn("relative", className)} 
+          ref={ref}
+          {...props}
+        >
+          {children}
+        </div>
+      </SelectContext.Provider>
     )
   }
 )
 Select.displayName = "Select"
 
-const SelectTrigger = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, ...props }, ref) => {
+const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerProps>(
+  ({ className, children, ...props }, ref) => {
+    const { disabled, required, isOpen, setIsOpen } = React.useContext(SelectContext)
+    
     return (
-      <select
+      <button
+        type="button"
+        role="combobox"
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+        aria-required={required}
+        aria-disabled={disabled}
+        disabled={disabled}
         className={cn(
           "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
           className
         )}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
         ref={ref}
         {...props}
-      />
+      >
+        {children}
+      </button>
     )
   }
 )
 SelectTrigger.displayName = "SelectTrigger"
 
-const SelectContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => {
+const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(
+  ({ className, children, ...props }, ref) => {
+    const { isOpen } = React.useContext(SelectContext)
+    
+    if (!isOpen) return null
+    
     return (
       <div
-        className={cn("relative", className)}
+        role="listbox"
+        className={cn("absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border bg-popover text-popover-foreground shadow-md", className)}
         ref={ref}
         {...props}
-      />
+      >
+        {children}
+      </div>
     )
   }
 )
 SelectContent.displayName = "SelectContent"
 
-const SelectItem = React.forwardRef<HTMLOptionElement, React.OptionHTMLAttributes<HTMLOptionElement>>(
-  ({ className, ...props }, ref) => {
+const SelectItem = React.forwardRef<HTMLDivElement, SelectItemProps>(
+  ({ className, value, children, disabled, ...props }, ref) => {
+    const { value: selectedValue, onValueChange } = React.useContext(SelectContext)
+    const isSelected = selectedValue === value
+    
     return (
-      <option
-        className={cn("relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50", className)}
+      <div
+        role="option"
+        aria-selected={isSelected}
+        aria-disabled={disabled}
+        className={cn(
+          "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+          isSelected && "bg-accent text-accent-foreground",
+          disabled && "pointer-events-none opacity-50",
+          className
+        )}
+        onClick={() => !disabled && onValueChange?.(value)}
         ref={ref}
         {...props}
-      />
+      >
+        {children}
+        {isSelected && (
+          <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </span>
+        )}
+      </div>
     )
   }
 )
 SelectItem.displayName = "SelectItem"
 
-const SelectValue = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
-  ({ className, ...props }, ref) => {
+const SelectValue = React.forwardRef<HTMLSpanElement, SelectValueProps>(
+  ({ className, placeholder, children, ...props }, ref) => {
+    const { value } = React.useContext(SelectContext)
+    
     return (
       <span
         className={cn("block truncate", className)}
         ref={ref}
         {...props}
-      />
+      >
+        {children || value || placeholder}
+      </span>
     )
   }
 )

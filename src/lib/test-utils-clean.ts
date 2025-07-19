@@ -57,7 +57,7 @@ export const createTestAssessmentPeriodData = (overrides: Partial<NewAssessmentP
  * Create test data for an assessment category
  */
 export const createTestAssessmentCategoryData = (overrides: Partial<NewAssessmentCategory> = {}): NewAssessmentCategory => ({
-  assessmentTypeId: overrides.assessmentTypeId || 1,
+  assessmentTypeId: 1, // This will be replaced with actual ID
   name: `Test Category ${Date.now()}`,
   description: 'Test category description',
   displayOrder: 1,
@@ -69,7 +69,7 @@ export const createTestAssessmentCategoryData = (overrides: Partial<NewAssessmen
  * Create test data for an assessment template
  */
 export const createTestAssessmentTemplateData = (overrides: Partial<NewAssessmentTemplate> = {}): NewAssessmentTemplate => ({
-  assessmentTypeId: overrides.assessmentTypeId || 1,
+  assessmentTypeId: 1, // This will be replaced with actual ID
   name: `Test Template ${Date.now()}`,
   version: '1.0',
   description: 'Test template description',
@@ -81,8 +81,8 @@ export const createTestAssessmentTemplateData = (overrides: Partial<NewAssessmen
  * Create test data for an assessment question
  */
 export const createTestAssessmentQuestionData = (overrides: Partial<NewAssessmentQuestion> = {}): NewAssessmentQuestion => ({
-  templateId: overrides.templateId || 1,
-  categoryId: overrides.categoryId || 1,
+  templateId: 1, // This will be replaced with actual ID
+  categoryId: 1, // This will be replaced with actual ID
   questionText: 'Test question?',
   displayOrder: 1,
   isActive: 1,
@@ -93,9 +93,9 @@ export const createTestAssessmentQuestionData = (overrides: Partial<NewAssessmen
  * Create test data for an assessment instance
  */
 export const createTestAssessmentInstanceData = (overrides: Partial<NewAssessmentInstance> = {}): NewAssessmentInstance => ({
-  userId: overrides.userId || 'user-required',
-  periodId: overrides.periodId || 1,
-  templateId: overrides.templateId || 1,
+  userId: 'user-required', // This will be replaced with actual ID
+  periodId: 1, // This will be replaced with actual ID
+  templateId: 1, // This will be replaced with actual ID
   status: 'pending',
   ...overrides
 });
@@ -104,8 +104,8 @@ export const createTestAssessmentInstanceData = (overrides: Partial<NewAssessmen
  * Create test data for an assessment response
  */
 export const createTestAssessmentResponseData = (overrides: Partial<NewAssessmentResponse> = {}): NewAssessmentResponse => ({
-  instanceId: overrides.instanceId || 1,
-  questionId: overrides.questionId || 1,
+  instanceId: 1, // This will be replaced with actual ID
+  questionId: 1, // This will be replaced with actual ID
   score: 85,
   notes: 'Test response notes',
   ...overrides
@@ -116,9 +116,9 @@ export const createTestAssessmentResponseData = (overrides: Partial<NewAssessmen
  * Note: This should only be used with actual entity IDs, not hardcoded values
  */
 export const createTestManagerRelationshipData = (overrides: Partial<NewManagerRelationship> = {}): NewManagerRelationship => ({
-  managerId: overrides.managerId || 'manager-required',
-  subordinateId: overrides.subordinateId || 'subordinate-required',
-  periodId: overrides.periodId || 1,
+  managerId: 'manager-required', // This will be replaced with actual ID
+  subordinateId: 'subordinate-required', // This will be replaced with actual ID
+  periodId: 1, // This will be replaced with actual ID
   ...overrides
 });
 
@@ -127,9 +127,9 @@ export const createTestManagerRelationshipData = (overrides: Partial<NewManagerR
  * Note: This should only be used with actual entity IDs, not hardcoded values
  */
 export const createTestInvitationData = (overrides: Partial<NewInvitation> = {}): NewInvitation => ({
-  managerId: overrides.managerId || 'manager-required',
-  templateId: overrides.templateId || 1,
-  periodId: overrides.periodId || 1,
+  managerId: 'manager-required', // This will be replaced with actual ID
+  templateId: 1, // This will be replaced with actual ID
+  periodId: 1, // This will be replaced with actual ID
   email: `invitee-${Date.now()}@example.com`,
   firstName: 'Test',
   lastName: 'User',
@@ -312,7 +312,7 @@ export const createTestInvitation = async (overrides: Partial<NewInvitation> = {
 // ============================================================================
 
 /**
- * Create a complete assessment setup with all dependencies
+ * Create a complete assessment setup with all related entities
  */
 export const createCompleteAssessmentSetup = async (overrides: {
   user?: Partial<NewUser>;
@@ -323,31 +323,37 @@ export const createCompleteAssessmentSetup = async (overrides: {
   question?: Partial<NewAssessmentQuestion>;
   instance?: Partial<NewAssessmentInstance>;
 } = {}) => {
-  // Create base entities
+  // Create entities in dependency order
+  
+  // 1. Create user (no dependencies)
   const user = await createTestUser(overrides.user);
+  
+  // 2. Create assessment type (no dependencies)
   const type = await createTestAssessmentType(overrides.type);
+  
+  // 3. Create assessment period (no dependencies)
   const period = await createTestAssessmentPeriod(overrides.period);
   
-  // Create template that references the type
-  const template = await createTestAssessmentTemplate({
-    assessmentTypeId: type.id,
-    ...overrides.template
-  });
-  
-  // Create category that references the type
+  // 4. Create assessment category (depends on assessment type)
   const category = await createTestAssessmentCategory({
     assessmentTypeId: type.id,
     ...overrides.category
   });
   
-  // Create question that references template and category
+  // 5. Create assessment template (depends on assessment type)
+  const template = await createTestAssessmentTemplate({
+    assessmentTypeId: type.id,
+    ...overrides.template
+  });
+  
+  // 6. Create assessment question (depends on template and category)
   const question = await createTestAssessmentQuestion({
     templateId: template.id,
     categoryId: category.id,
     ...overrides.question
   });
   
-  // Create instance that references user, period, and template
+  // 7. Create assessment instance (depends on user, period, template)
   const instance = await createTestAssessmentInstance({
     userId: user.id,
     periodId: period.id,
@@ -359,7 +365,7 @@ export const createCompleteAssessmentSetup = async (overrides: {
 };
 
 /**
- * Create a complete manager-subordinate setup
+ * Create a manager-subordinate relationship setup
  */
 export const createManagerSubordinateSetup = async (overrides: {
   manager?: Partial<NewUser>;
@@ -367,10 +373,18 @@ export const createManagerSubordinateSetup = async (overrides: {
   period?: Partial<NewAssessmentPeriod>;
   relationship?: Partial<NewManagerRelationship>;
 } = {}) => {
+  // Create entities in dependency order
+  
+  // 1. Create manager user (no dependencies)
   const manager = await createTestUser({ role: 'manager', ...overrides.manager });
+  
+  // 2. Create subordinate user (no dependencies)
   const subordinate = await createTestUser({ role: 'user', ...overrides.subordinate });
+  
+  // 3. Create assessment period (no dependencies)
   const period = await createTestAssessmentPeriod(overrides.period);
   
+  // 4. Create manager relationship (depends on manager, subordinate, period)
   const relationship = await createTestManagerRelationship({
     managerId: manager.id,
     subordinateId: subordinate.id,
@@ -382,33 +396,37 @@ export const createManagerSubordinateSetup = async (overrides: {
 };
 
 /**
- * Create a complete invitation setup
+ * Create an invitation setup with required dependencies
  */
 export const createInvitationSetup = async (overrides: {
   manager?: Partial<NewUser>;
   invitation?: Partial<NewInvitation>;
 } = {}) => {
-  const manager = await createTestUser({ role: 'manager', ...overrides.manager });
-  const type = await createTestAssessmentType();
-  const period = await createTestAssessmentPeriod();
-  const template = await createTestAssessmentTemplate({ assessmentTypeId: type.id });
-
-  // Import the service dynamically to avoid circular dependencies
-  const { InvitationsService } = await import('./services/invitations');
+  // Create entities in dependency order
   
-  const invitationData = {
+  // 1. Create manager user (no dependencies)
+  const manager = await createTestUser({ role: 'manager', ...overrides.manager });
+  
+  // 2. Create assessment type (no dependencies)
+  const type = await createTestAssessmentType();
+  
+  // 3. Create assessment period (no dependencies)
+  const period = await createTestAssessmentPeriod();
+  
+  // 4. Create assessment template (depends on assessment type)
+  const template = await createTestAssessmentTemplate({
+    assessmentTypeId: type.id
+  });
+  
+  // 5. Create invitation (depends on manager, template, period)
+  const invitation = await createTestInvitation({
     managerId: manager.id,
     templateId: template.id,
     periodId: period.id,
-    email: `invitee-${Date.now()}@example.com`,
-    firstName: 'Test',
-    lastName: 'User',
     ...overrides.invitation
-  };
-
-  const invitation = await InvitationsService.createInvitation(invitationData);
+  });
   
-  return { manager, invitation };
+  return { manager, type, period, template, invitation };
 };
 
 /**
@@ -609,20 +627,43 @@ export const createInvitationWithExistingData = async (overrides: {
 // ============================================================================
 
 /**
- * Clean up all test data in proper order
+ * Clean up all test data in proper order (respecting foreign key constraints)
  */
 export const cleanupTestData = async (): Promise<void> => {
   // Delete in dependency order (reverse of creation)
-  await db.delete(assessmentResponses);
-  await db.delete(assessmentQuestions);
-  await db.delete(assessmentInstances);
-  await db.delete(assessmentCategories);
-  await db.delete(assessmentTemplates);
-  await db.delete(managerRelationships);
-  await db.delete(invitations);
+  // Start with tables that have the most dependencies
+  
+  // 1. Magic links (no dependencies)
   await db.delete(magicLinks);
+  
+  // 2. Invitations (depends on users, templates, periods)
+  await db.delete(invitations);
+  
+  // 3. Manager relationships (depends on users, periods)
+  await db.delete(managerRelationships);
+  
+  // 4. Assessment responses (depends on instances, questions)
+  await db.delete(assessmentResponses);
+  
+  // 5. Assessment instances (depends on users, periods, templates)
+  await db.delete(assessmentInstances);
+  
+  // 6. Assessment questions (depends on templates, categories)
+  await db.delete(assessmentQuestions);
+  
+  // 7. Assessment templates (depends on assessment types)
+  await db.delete(assessmentTemplates);
+  
+  // 8. Assessment categories (depends on assessment types)
+  await db.delete(assessmentCategories);
+  
+  // 9. Assessment periods (no dependencies)
   await db.delete(assessmentPeriods);
+  
+  // 10. Assessment types (no dependencies)
   await db.delete(assessmentTypes);
+  
+  // 11. Users (no dependencies) - delete last since many tables depend on it
   await db.delete(users);
 };
 
@@ -649,30 +690,30 @@ export const safeCleanup = async (): Promise<void> => {
     await cleanup();
   } catch (error) {
     console.warn('Cleanup failed, attempting individual table cleanup:', error);
-    // Try individual table cleanup as fallback
+    // Try individual table cleanup as fallback in proper order
     try {
-      await db.delete(assessmentResponses);
-    } catch (e) {}
-    try {
-      await db.delete(assessmentQuestions);
-    } catch (e) {}
-    try {
-      await db.delete(assessmentInstances);
-    } catch (e) {}
-    try {
-      await db.delete(assessmentCategories);
-    } catch (e) {}
-    try {
-      await db.delete(assessmentTemplates);
-    } catch (e) {}
-    try {
-      await db.delete(managerRelationships);
+      await db.delete(magicLinks);
     } catch (e) {}
     try {
       await db.delete(invitations);
     } catch (e) {}
     try {
-      await db.delete(magicLinks);
+      await db.delete(managerRelationships);
+    } catch (e) {}
+    try {
+      await db.delete(assessmentResponses);
+    } catch (e) {}
+    try {
+      await db.delete(assessmentInstances);
+    } catch (e) {}
+    try {
+      await db.delete(assessmentQuestions);
+    } catch (e) {}
+    try {
+      await db.delete(assessmentTemplates);
+    } catch (e) {}
+    try {
+      await db.delete(assessmentCategories);
     } catch (e) {}
     try {
       await db.delete(assessmentPeriods);

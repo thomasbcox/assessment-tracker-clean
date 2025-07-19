@@ -91,6 +91,15 @@ export class AssessmentPeriodsService {
       const existing = await this.getPeriodById(id);
       if (!existing) throw new Error('Assessment period not found');
 
+      // Check for duplicate name if name is being updated, excluding current period
+      if (data.name) {
+        const duplicate = await db.select()
+          .from(assessmentPeriods)
+          .where(and(eq(assessmentPeriods.name, data.name), ne(assessmentPeriods.id, id)))
+          .limit(1);
+        if (duplicate.length > 0) throw new Error('Period with this name already exists');
+      }
+
       // Validate date range if dates are being updated
       if (data.startDate && data.endDate) {
         const startDate = new Date(data.startDate);

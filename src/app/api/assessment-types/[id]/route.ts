@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getTypeById, updateType, deleteType } from '@/lib/services/assessment-types';
+import { AssessmentCategoriesService } from '@/lib/services/assessment-categories';
 import { AssessmentTemplatesService } from '@/lib/services/assessment-templates';
-import { AssessmentQuestionsService } from '@/lib/services/assessment-questions';
-import { AssessmentInstancesService } from '@/lib/services/assessment-instances';
-import { InvitationsService } from '@/lib/services/invitations';
 import { ServiceError } from '@/lib/types/service-interfaces';
 
 export async function GET(
@@ -11,25 +10,25 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const templateId = parseInt(id);
+    const typeId = parseInt(id);
     
-    if (isNaN(templateId)) {
+    if (isNaN(typeId)) {
       return NextResponse.json(
-        { error: 'Invalid template ID' },
+        { error: 'Invalid assessment type ID' },
         { status: 400 }
       );
     }
 
-    const template = await AssessmentTemplatesService.getTemplateById(templateId.toString());
+    const assessmentType = await getTypeById(typeId);
     
-    if (!template) {
+    if (!assessmentType) {
       return NextResponse.json(
-        { error: 'Assessment template not found' },
+        { error: 'Assessment type not found' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(template);
+    return NextResponse.json(assessmentType);
   } catch (error) {
     if (error instanceof ServiceError) {
       return NextResponse.json(
@@ -51,25 +50,25 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const templateId = parseInt(id);
+    const typeId = parseInt(id);
     
-    if (isNaN(templateId)) {
+    if (isNaN(typeId)) {
       return NextResponse.json(
-        { error: 'Invalid template ID' },
+        { error: 'Invalid assessment type ID' },
         { status: 400 }
       );
     }
 
     const body = await request.json();
     
-    const updatedTemplate = await AssessmentTemplatesService.updateTemplate(templateId.toString(), {
+    const updatedType = await updateType(typeId, {
       name: body.name,
-      version: body.version,
       description: body.description,
-      assessmentTypeId: body.assessmentTypeId,
+      purpose: body.purpose,
+      isActive: body.isActive,
     });
 
-    return NextResponse.json(updatedTemplate);
+    return NextResponse.json(updatedType);
   } catch (error) {
     if (error instanceof ServiceError) {
       return NextResponse.json(
@@ -91,56 +90,50 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const templateId = parseInt(id);
+    const typeId = parseInt(id);
     
-    if (isNaN(templateId)) {
+    if (isNaN(typeId)) {
       return NextResponse.json(
-        { error: 'Invalid template ID' },
+        { error: 'Invalid assessment type ID' },
         { status: 400 }
       );
     }
 
-    // Check for existing questions
-    const questions = await AssessmentQuestionsService.getQuestionsByTemplate(templateId);
+    // Check for existing categories
+    const categories = await AssessmentCategoriesService.getCategoriesByType(typeId);
     
-    // Check for existing instances
-    const instances = await AssessmentInstancesService.getInstancesByTemplate(templateId);
-    
-    // Check for existing invitations
-    const invitations = await InvitationsService.getInvitationsByTemplate(templateId);
+    // Check for existing templates
+    const templates = await AssessmentTemplatesService.getTemplatesByType(typeId.toString());
     
     // Build error message if any child records exist
     const childRecords = [];
-    if (questions.length > 0) {
-      childRecords.push(`${questions.length} assessment question(s)`);
+    if (categories.length > 0) {
+      childRecords.push(`${categories.length} assessment category(ies)`);
     }
-    if (instances.length > 0) {
-      childRecords.push(`${instances.length} assessment instance(s)`);
-    }
-    if (invitations.length > 0) {
-      childRecords.push(`${invitations.length} invitation(s)`);
+    if (templates.length > 0) {
+      childRecords.push(`${templates.length} assessment template(s)`);
     }
     
     if (childRecords.length > 0) {
       return NextResponse.json(
         { 
-          error: 'Cannot delete assessment template with existing child records',
+          error: 'Cannot delete assessment type with existing child records',
           childRecords,
-          totalChildRecords: questions.length + instances.length + invitations.length,
-          message: `Please remove all ${childRecords.join(', ')} before deleting this template.`
+          totalChildRecords: categories.length + templates.length,
+          message: `Please remove all ${childRecords.join(', ')} before deleting this assessment type.`
         },
         { status: 400 }
       );
     }
 
-    // Delete the template (only if no child records exist)
+    // Delete the assessment type (only if no child records exist)
     try {
-      await AssessmentTemplatesService.deleteTemplate(templateId.toString());
-      return NextResponse.json({ message: 'Assessment template deleted successfully' });
+      await deleteType(typeId);
+      return NextResponse.json({ message: 'Assessment type deleted successfully' });
     } catch (error) {
-      console.error('Error deleting assessment template:', error);
+      console.error('Error deleting assessment type:', error);
       return NextResponse.json(
-        { error: 'Failed to delete assessment template' },
+        { error: 'Failed to delete assessment type' },
         { status: 500 }
       );
     }

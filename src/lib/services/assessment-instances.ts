@@ -1,4 +1,4 @@
-import { db, assessmentInstances, users, assessmentPeriods, assessmentTemplates } from '@/lib/db';
+import { db, assessmentInstances, users, assessmentPeriods, assessmentTemplates, assessmentTypes } from '@/lib/db';
 import { eq, and } from 'drizzle-orm';
 import { logger } from '@/lib/logger';
 
@@ -18,6 +18,13 @@ export interface AssessmentInstance {
   status: string;
   completedAt: string | null;
   createdAt: string;
+}
+
+export interface AssessmentInstanceWithDetails extends AssessmentInstance {
+  periodName: string;
+  templateName: string;
+  templateVersion: string;
+  assessmentTypeName: string;
 }
 
 export class AssessmentInstancesService {
@@ -67,6 +74,74 @@ export class AssessmentInstancesService {
     }
   }
 
+  static async getAssessmentInstance(id: number): Promise<AssessmentInstanceWithDetails> {
+    try {
+      const [instance] = await db
+        .select({
+          id: assessmentInstances.id,
+          userId: assessmentInstances.userId,
+          periodId: assessmentInstances.periodId,
+          templateId: assessmentInstances.templateId,
+          status: assessmentInstances.status,
+          startedAt: assessmentInstances.startedAt,
+          completedAt: assessmentInstances.completedAt,
+          createdAt: assessmentInstances.createdAt,
+          periodName: assessmentPeriods.name,
+          templateName: assessmentTemplates.name,
+          templateVersion: assessmentTemplates.version,
+          assessmentTypeName: assessmentTypes.name,
+        })
+        .from(assessmentInstances)
+        .innerJoin(assessmentPeriods, eq(assessmentInstances.periodId, assessmentPeriods.id))
+        .innerJoin(assessmentTemplates, eq(assessmentInstances.templateId, assessmentTemplates.id))
+        .innerJoin(assessmentTypes, eq(assessmentTemplates.assessmentTypeId, assessmentTypes.id))
+        .where(eq(assessmentInstances.id, id))
+        .limit(1);
+
+      if (!instance) throw new Error('Assessment instance not found');
+      
+      return {
+        ...instance,
+        status: instance.status || 'pending',
+        createdAt: instance.createdAt || '',
+      };
+    } catch (error) {
+      logger.dbError('fetch assessment instance with details', error as Error, { id });
+      throw error;
+    }
+  }
+
+  static async updateAssessmentInstance(id: number, data: Partial<AssessmentInstanceData>): Promise<AssessmentInstance> {
+    try {
+      const updateData: any = {};
+      
+      if (data.status !== undefined) {
+        updateData.status = data.status;
+      }
+      if (data.completedAt !== undefined) {
+        updateData.completedAt = data.completedAt;
+      }
+      if (data.status === 'in_progress' && !data.completedAt) {
+        updateData.startedAt = new Date().toISOString();
+      }
+      if (data.status === 'completed' && !data.completedAt) {
+        updateData.completedAt = new Date().toISOString();
+      }
+
+      const [updated] = await db.update(assessmentInstances)
+        .set(updateData)
+        .where(eq(assessmentInstances.id, id))
+        .returning();
+        
+      if (!updated) throw new Error('Assessment instance not found');
+      
+      return { ...updated, status: updated.status || 'pending', createdAt: updated.createdAt || '' };
+    } catch (error) {
+      logger.dbError('update assessment instance', error as Error, { id, data });
+      throw error;
+    }
+  }
+
   static async getInstancesByUser(userId: string): Promise<AssessmentInstance[]> {
     try {
       const results = await db.select().from(assessmentInstances).where(eq(assessmentInstances.userId, userId));
@@ -99,4 +174,35 @@ export class AssessmentInstancesService {
       throw error;
     }
   }
+
+  static async getInstancesByPeriod(periodId: number): Promise<AssessmentInstance[]> {
+    try {
+      const results = await db.select().from(assessmentInstances).where(eq(assessmentInstances.periodId, periodId));
+      return results.map(instance => ({ ...instance, status: instance.status || 'pending', createdAt: instance.createdAt || '' }));
+    } catch (error) {
+      logger.dbError('fetch assessment instances by period', error as Error, { periodId });
+      throw error;
+    }
+  }
+
+  static async getInstancesByTemplate(templateId: number): Promise<AssessmentInstance[]> {
+    try {
+      const results = await db.select().from(assessmentInstances).where(eq(assessmentInstances.templateId, templateId));
+      return results.map(instance => ({ ...instance, status: instance.status || 'pending', createdAt: instance.createdAt || '' }));
+    } catch (error) {
+      logger.dbError('fetch assessment instances by template', error as Error, { templateId });
+      throw error;
+    }
+  }
 } 
+
+// Export individual functions for API endpoints
+export const createInstance = AssessmentInstancesService.createInstance;
+export const getInstanceById = AssessmentInstancesService.getInstanceById;
+export const getAssessmentInstance = AssessmentInstancesService.getAssessmentInstance;
+export const updateAssessmentInstance = AssessmentInstancesService.updateAssessmentInstance;
+export const getInstancesByUser = AssessmentInstancesService.getInstancesByUser;
+export const getInstancesByPeriod = AssessmentInstancesService.getInstancesByPeriod;
+export const getInstancesByTemplate = AssessmentInstancesService.getInstancesByTemplate;
+export const updateInstanceStatus = AssessmentInstancesService.updateInstanceStatus;
+export const deleteInstance = AssessmentInstancesService.deleteInstance; 

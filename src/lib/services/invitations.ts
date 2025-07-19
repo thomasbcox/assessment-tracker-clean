@@ -325,4 +325,49 @@ export class InvitationsService {
       throw error;
     }
   }
-} 
+
+  static async getInvitationsByPeriod(periodId: number): Promise<Invitation[]> {
+    try {
+      const invitationRows = await db.select().from(invitations)
+        .where(eq(invitations.periodId, periodId))
+        .orderBy(invitations.invitedAt);
+      return invitationRows.map((invitation: any) => {
+        const { reminderCount, ...rest } = invitation;
+        return { ...rest, invitedAt: invitation.invitedAt || '', status: invitation.status || 'pending', reminderCount: Number(reminderCount ?? 0) };
+      });
+    } catch (error) {
+      logger.dbError('fetch invitations by period', error as Error, { periodId });
+      throw error;
+    }
+  }
+
+  static async getInvitationsByTemplate(templateId: number): Promise<Invitation[]> {
+    try {
+      const invitationRows = await db.select().from(invitations)
+        .where(eq(invitations.templateId, templateId))
+        .orderBy(invitations.invitedAt);
+      return invitationRows.map((invitation: any) => {
+        const { reminderCount, ...rest } = invitation;
+        return { ...rest, invitedAt: invitation.invitedAt || '', status: invitation.status || 'pending', reminderCount: Number(reminderCount ?? 0) };
+      });
+    } catch (error) {
+      logger.dbError('fetch invitations by template', error as Error, { templateId });
+      throw error;
+    }
+  }
+}
+
+// Export individual functions for API endpoints
+export const createInvitation = InvitationsService.createInvitation;
+export const getInvitationById = InvitationsService.getInvitationById;
+export const getInvitationByToken = InvitationsService.getInvitationByToken;
+export const getInvitationsByManager = InvitationsService.getInvitationsByManager;
+export const getInvitationsByEmail = InvitationsService.getInvitationsByEmail;
+export const getInvitationsByPeriod = InvitationsService.getInvitationsByPeriod;
+export const getInvitationsByTemplate = InvitationsService.getInvitationsByTemplate;
+export const acceptInvitation = InvitationsService.acceptInvitation;
+export const declineInvitation = InvitationsService.declineInvitation;
+export const updateInvitationStatus = InvitationsService.updateInvitationStatus;
+export const sendReminder = InvitationsService.sendReminder;
+export const cleanupExpiredInvitations = InvitationsService.cleanupExpiredInvitations;
+export const deleteInvitation = InvitationsService.deleteInvitation; 

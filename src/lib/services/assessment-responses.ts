@@ -113,4 +113,11 @@ export class AssessmentResponsesService {
       throw error;
     }
   }
-} 
+}
+
+// Export individual functions for API endpoints
+export const createResponse = AssessmentResponsesService.createResponse;
+export const getResponsesByInstance = AssessmentResponsesService.getResponsesByInstance;
+export const updateResponse = AssessmentResponsesService.updateResponse;
+export const deleteResponse = AssessmentResponsesService.deleteResponse;
+export const validateInstanceCompletion = AssessmentResponsesService.validateInstanceCompletion; 

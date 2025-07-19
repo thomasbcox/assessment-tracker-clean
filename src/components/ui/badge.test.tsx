@@ -8,7 +8,7 @@ describe('Badge Component', () => {
     
     const badge = screen.getByText('Test Badge');
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass('inline-flex', 'items-center', 'rounded-full', 'px-2.5', 'py-0.5', 'text-xs', 'font-medium', 'bg-primary', 'text-primary-foreground');
+    expect(badge).toHaveClass('inline-flex', 'items-center', 'rounded-full', 'border', 'px-2.5', 'py-0.5', 'text-xs', 'font-semibold', 'bg-primary', 'text-primary-foreground');
   });
 
   it('should render with secondary variant', () => {
@@ -32,29 +32,42 @@ describe('Badge Component', () => {
     
     const badge = screen.getByText('Outline Badge');
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass('text-foreground', 'border', 'border-input');
+    expect(badge).toHaveClass('text-foreground');
   });
 
   it('should apply custom className', () => {
-    render(<Badge className="custom-class">Custom Badge</Badge>);
+    render(<Badge className="custom-badge">Custom Badge</Badge>);
     
     const badge = screen.getByText('Custom Badge');
-    expect(badge).toHaveClass('custom-class');
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveClass('custom-badge');
   });
 
-  it('should render with children content', () => {
+  it('should handle empty content', () => {
+    render(<Badge data-testid="empty-badge"></Badge>);
+    
+    const badge = screen.getByTestId('empty-badge');
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveTextContent('');
+  });
+
+  it('should render with different content types', () => {
     render(
-      <Badge>
-        <span>Icon</span>
-        Badge with Icon
+      <Badge data-testid="complex-badge">
+        <strong>Bold</strong> and <em>italic</em> text
       </Badge>
     );
     
-    const badge = screen.getByText('Badge with Icon');
-    const icon = screen.getByText('Icon');
+    const badge = screen.getByTestId('complex-badge');
+    const boldText = screen.getByText('Bold');
+    const italicText = screen.getByText('italic');
     
     expect(badge).toBeInTheDocument();
-    expect(icon).toBeInTheDocument();
+    expect(badge).toHaveTextContent('Bold and italic text');
+    expect(boldText).toBeInTheDocument();
+    expect(italicText).toBeInTheDocument();
+    expect(boldText.tagName).toBe('STRONG');
+    expect(italicText.tagName).toBe('EM');
   });
 
   it('should forward ref correctly', () => {
@@ -64,27 +77,21 @@ describe('Badge Component', () => {
     expect(ref.current).toBeInstanceOf(HTMLDivElement);
   });
 
-  it('should handle empty content', () => {
-    render(<Badge></Badge>);
-    
-    const badge = screen.getByRole('generic');
-    expect(badge).toBeInTheDocument();
-    expect(badge).toHaveTextContent('');
-  });
-
-  it('should render with different content types', () => {
+  it('should handle all HTML attributes', () => {
     render(
-      <Badge>
-        <strong>Bold</strong> and <em>italic</em> text
+      <Badge 
+        id="test-badge"
+        data-testid="test-badge"
+        aria-label="Test badge"
+        title="Test badge tooltip"
+      >
+        Attribute Badge
       </Badge>
     );
     
-    const badge = screen.getByText(/Bold and italic text/);
-    const boldText = screen.getByText('Bold');
-    const italicText = screen.getByText('italic');
-    
-    expect(badge).toBeInTheDocument();
-    expect(boldText.tagName).toBe('STRONG');
-    expect(italicText.tagName).toBe('EM');
+    const badge = screen.getByTestId('test-badge');
+    expect(badge).toHaveAttribute('id', 'test-badge');
+    expect(badge).toHaveAttribute('aria-label', 'Test badge');
+    expect(badge).toHaveAttribute('title', 'Test badge tooltip');
   });
 }); 

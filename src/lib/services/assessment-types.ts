@@ -32,4 +32,43 @@ export async function createAssessmentType(data: {
     logger.dbError('create assessment type', error as Error);
     throw new Error('Failed to create assessment type');
   }
+}
+
+export async function getTypeById(id: number): Promise<AssessmentType | null> {
+  try {
+    const [type] = await db.select().from(assessmentTypes).where(eq(assessmentTypes.id, id)).limit(1);
+    return type || null;
+  } catch (error) {
+    logger.dbError('fetch assessment type by id', error as Error, { id });
+    throw error;
+  }
+}
+
+export async function updateType(id: number, data: {
+  name?: string;
+  description?: string;
+  purpose?: string;
+  isActive?: number;
+}): Promise<AssessmentType> {
+  try {
+    const [updated] = await db.update(assessmentTypes)
+      .set(data)
+      .where(eq(assessmentTypes.id, id))
+      .returning();
+
+    if (!updated) throw new Error('Assessment type not found');
+    return updated;
+  } catch (error) {
+    logger.dbError('update assessment type', error as Error, { id, data });
+    throw error;
+  }
+}
+
+export async function deleteType(id: number): Promise<void> {
+  try {
+    await db.delete(assessmentTypes).where(eq(assessmentTypes.id, id));
+  } catch (error) {
+    logger.dbError('delete assessment type', error as Error, { id });
+    throw error;
+  }
 } 

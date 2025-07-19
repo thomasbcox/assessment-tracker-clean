@@ -129,6 +129,32 @@ export class ManagerRelationshipsService {
     }
   }
 
+  static async getRelationshipsByManager(managerId: string): Promise<ManagerRelationship[]> {
+    try {
+      const relationships = await db.select().from(managerRelationships)
+        .where(eq(managerRelationships.managerId, managerId))
+        .orderBy(managerRelationships.createdAt);
+      
+      return relationships.map(relationship => ({ ...relationship, createdAt: relationship.createdAt || '' }));
+    } catch (error) {
+      logger.dbError('fetch relationships by manager', error as Error, { managerId });
+      throw error;
+    }
+  }
+
+  static async getRelationshipsBySubordinate(subordinateId: string): Promise<ManagerRelationship[]> {
+    try {
+      const relationships = await db.select().from(managerRelationships)
+        .where(eq(managerRelationships.subordinateId, subordinateId))
+        .orderBy(managerRelationships.createdAt);
+      
+      return relationships.map(relationship => ({ ...relationship, createdAt: relationship.createdAt || '' }));
+    } catch (error) {
+      logger.dbError('fetch relationships by subordinate', error as Error, { subordinateId });
+      throw error;
+    }
+  }
+
   static async updateRelationship(id: number, data: Partial<ManagerRelationshipData>): Promise<ManagerRelationship> {
     try {
       const existing = await this.getRelationshipById(id);
