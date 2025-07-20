@@ -97,31 +97,8 @@ export async function DELETE(
       );
     }
 
-    // Check if category has any questions
-    const questionsInCategory = await AssessmentQuestionsService.getQuestionsByCategory(categoryId);
-    
-    if (questionsInCategory.length > 0) {
-      return NextResponse.json(
-        { 
-          error: 'Cannot delete category with existing questions',
-          questionCount: questionsInCategory.length,
-          message: 'Please delete or move all questions in this category before deleting the category'
-        },
-        { status: 400 }
-      );
-    }
-
-    // Delete the category (only if no questions exist)
-    try {
-      await AssessmentCategoriesService.deleteCategory(categoryId);
-      return NextResponse.json({ message: 'Category deleted successfully' });
-    } catch (error) {
-      console.error('Error deleting category:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete category' },
-        { status: 500 }
-      );
-    }
+    await AssessmentCategoriesService.deleteCategory(categoryId);
+    return NextResponse.json({ message: 'Category deleted successfully' });
   } catch (error) {
     if (error instanceof ServiceError) {
       return NextResponse.json(

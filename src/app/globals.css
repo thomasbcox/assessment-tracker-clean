@@ -53,6 +53,14 @@ body {
   --border: #e2e8f0;
   --input: #e2e8f0;
   --ring: #2A527A;
+  
+  /* Brand Colors */
+  --brand-dark-blue: #2A527A;
+  --brand-medium-blue: #337AB7;
+  --brand-light-blue: #4A90E2;
+  --brand-dark-teal: #2A7A7A;
+  --brand-vibrant-teal: #33B7B7;
+  --brand-light-teal: #4AC4C4;
 }
 
 /* Dark mode support (if needed later) */
@@ -265,16 +273,31 @@ body {
   font-weight: 500;
   transition: all 0.3s ease;
   cursor: pointer;
+  border-bottom: 2px solid transparent;
 }
 
 .nav-item:hover {
-  background: rgba(42, 82, 122, 0.1); /* Brand dark blue with opacity */
+  background: rgba(42, 82, 122, 0.05); /* Brand dark blue with opacity */
   transform: translateY(-1px);
 }
 
-.nav-item.active {
-  background: rgba(42, 82, 122, 0.2);
+.nav-item-active {
+  background: rgba(42, 82, 122, 0.1) !important;
   box-shadow: 0 4px 15px rgba(42, 82, 122, 0.1);
+  font-weight: 600;
+  transform: translateY(-1px);
+}
+
+.nav-item-active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 3px;
+  background: linear-gradient(135deg, #2A527A 0%, #337AB7 100%);
+  border-radius: 2px;
 }
 
 /* Header styles */
@@ -283,4 +306,66 @@ body {
   backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(42, 82, 122, 0.1);
   box-shadow: 0 4px 20px rgba(42, 82, 122, 0.05);
+}
+
+/* Enhanced Tab Styles */
+[data-radix-tabs-list] {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(42, 82, 122, 0.2);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 4px 15px rgba(42, 82, 122, 0.1);
+}
+
+[data-radix-tabs-trigger] {
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  color: #2A527A;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  font-size: 14px;
+}
+
+[data-radix-tabs-trigger]:hover {
+  background: rgba(42, 82, 122, 0.08);
+  color: #2A527A;
+}
+
+[data-radix-tabs-trigger][data-state="active"] {
+  background: #2A527A;
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(42, 82, 122, 0.3);
+  transform: translateY(-1px);
+}
+
+[data-radix-tabs-trigger][data-state="active"]:hover {
+  background: #337AB7;
+  color: white;
+}
+
+[data-radix-tabs-content] {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Tab content animation */
+[data-radix-tabs-content][data-state="active"] {
+  animation: slideInUp 0.4s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

@@ -1,5 +1,5 @@
 import { db, assessmentTemplates, assessmentTypes } from '@/lib/db';
-import { eq, ne } from 'drizzle-orm';
+import { eq, ne, and } from 'drizzle-orm';
 import { logger } from '@/lib/logger';
 
 export interface CreateTemplateData {
@@ -103,9 +103,11 @@ export class AssessmentTemplatesService {
           .select()
           .from(assessmentTemplates)
           .where(
-            eq(assessmentTemplates.name, newName) && 
-            eq(assessmentTemplates.version, newVersion) &&
-            ne(assessmentTemplates.id, parseInt(id))
+            and(
+              eq(assessmentTemplates.name, newName),
+              eq(assessmentTemplates.version, newVersion),
+              ne(assessmentTemplates.id, parseInt(id))
+            )
           )
           .limit(1);
 
@@ -185,8 +187,10 @@ export class AssessmentTemplatesService {
         .from(assessmentTemplates)
         .innerJoin(assessmentTypes, eq(assessmentTemplates.assessmentTypeId, assessmentTypes.id))
         .where(
-          eq(assessmentTemplates.assessmentTypeId, parseInt(typeId)) &&
-          eq(assessmentTemplates.isActive, 1)
+          and(
+            eq(assessmentTemplates.assessmentTypeId, parseInt(typeId)),
+            eq(assessmentTemplates.isActive, 1)
+          )
         );
 
       return templates;
@@ -228,8 +232,10 @@ export class AssessmentTemplatesService {
         .select()
         .from(assessmentTemplates)
         .where(
-          eq(assessmentTemplates.name, data.name) && 
-          eq(assessmentTemplates.version, data.version)
+          and(
+            eq(assessmentTemplates.name, data.name),
+            eq(assessmentTemplates.version, data.version)
+          )
         )
         .limit(1);
 

@@ -1,6 +1,7 @@
 import { db, assessmentCategories, assessmentTypes } from '@/lib/db';
 import { eq, and, ne } from 'drizzle-orm';
 import { logger } from '@/lib/logger';
+import { ServiceError } from '@/lib/types/service-interfaces';
 
 export interface AssessmentCategoryData {
   assessmentTypeId: number;
@@ -133,10 +134,29 @@ export class AssessmentCategoriesService {
 
   static async deleteCategory(id: number): Promise<void> {
     try {
+      // Check for child questions
+      const { assessmentQuestions } = await import('@/lib/db');
+      const questions = await db.select().from(assessmentQuestions)
+        .where(eq(assessmentQuestions.categoryId, id))
+        .limit(1);
+      
+      if (questions.length > 0) {
+        throw new ServiceError(
+          `Cannot delete category: ${questions.length} question(s) are associated with this category. Please remove or reassign the questions first.`,
+          'CATEGORY_HAS_QUESTIONS',
+          400,
+          { questionCount: questions.length }
+        );
+      }
+      
+      // Safe to delete - no child dependencies
       await db.delete(assessmentCategories).where(eq(assessmentCategories.id, id));
     } catch (error) {
+      if (error instanceof ServiceError) {
+        throw error; // Re-throw business errors
+      }
       logger.dbError('delete assessment category', error as Error, { id });
-      throw error;
+      throw new ServiceError('Failed to delete assessment category', 'DELETE_FAILED', 500);
     }
   }
 

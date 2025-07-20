@@ -99,44 +99,8 @@ export async function DELETE(
       );
     }
 
-    // Check for existing categories
-    const categories = await AssessmentCategoriesService.getCategoriesByType(typeId);
-    
-    // Check for existing templates
-    const templates = await AssessmentTemplatesService.getTemplatesByType(typeId.toString());
-    
-    // Build error message if any child records exist
-    const childRecords = [];
-    if (categories.length > 0) {
-      childRecords.push(`${categories.length} assessment category(ies)`);
-    }
-    if (templates.length > 0) {
-      childRecords.push(`${templates.length} assessment template(s)`);
-    }
-    
-    if (childRecords.length > 0) {
-      return NextResponse.json(
-        { 
-          error: 'Cannot delete assessment type with existing child records',
-          childRecords,
-          totalChildRecords: categories.length + templates.length,
-          message: `Please remove all ${childRecords.join(', ')} before deleting this assessment type.`
-        },
-        { status: 400 }
-      );
-    }
-
-    // Delete the assessment type (only if no child records exist)
-    try {
-      await deleteType(typeId);
-      return NextResponse.json({ message: 'Assessment type deleted successfully' });
-    } catch (error) {
-      console.error('Error deleting assessment type:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete assessment type' },
-        { status: 500 }
-      );
-    }
+    await deleteType(typeId);
+    return NextResponse.json({ message: 'Assessment type deleted successfully' });
   } catch (error) {
     if (error instanceof ServiceError) {
       return NextResponse.json(

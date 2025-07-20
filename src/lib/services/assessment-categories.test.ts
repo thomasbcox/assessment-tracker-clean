@@ -284,6 +284,70 @@ describe('Assessment Categories Service', () => {
       // Deleting a non-existent category should not throw an error
       await expect(AssessmentCategoriesService.deleteCategory(999)).resolves.toBeUndefined();
     });
+
+    it('should prevent deletion of category with child questions', async () => {
+      const assessmentType = await getOrCreateAssessmentType();
+      const timestamp = Date.now();
+      
+      // Create a category
+      const categoryData = {
+        assessmentTypeId: assessmentType.id,
+        name: `Test Category with Questions ${timestamp}`,
+        displayOrder: 1
+      };
+      const category = await AssessmentCategoriesService.createCategory(categoryData);
+      
+      // Create a template for this assessment type
+      const { AssessmentTemplatesService } = await import('./assessment-templates');
+      const template = await AssessmentTemplatesService.createTemplate({
+        assessmentTypeId: assessmentType.id.toString(),
+        name: `Test Template ${timestamp}`,
+        version: '1.0',
+        description: 'Test template'
+      });
+      
+      // Create a question in this category
+      const { AssessmentQuestionsService } = await import('./assessment-questions');
+      await AssessmentQuestionsService.createQuestion({
+        templateId: template.id,
+        categoryId: category.id,
+        questionText: 'Test question for cascade prevention',
+        displayOrder: 1
+      });
+      
+      // Try to delete the category - this should fail
+      await expect(AssessmentCategoriesService.deleteCategory(category.id)).rejects.toThrow();
+      
+      // Verify the category still exists
+      const existingCategory = await AssessmentCategoriesService.getCategoryById(category.id);
+      expect(existingCategory).not.toBeNull();
+      expect(existingCategory?.id).toBe(category.id);
+    });
+
+    it('should allow deletion of category without child questions', async () => {
+      const assessmentType = await getOrCreateAssessmentType();
+      const timestamp = Date.now();
+      
+      // Create a category
+      const categoryData = {
+        assessmentTypeId: assessmentType.id,
+        name: `Test Category without Questions ${timestamp}`,
+        displayOrder: 1
+      };
+      const category = await AssessmentCategoriesService.createCategory(categoryData);
+      
+      // Verify it has no questions (should be 0)
+      const { AssessmentQuestionsService } = await import('./assessment-questions');
+      const questions = await AssessmentQuestionsService.getQuestionsByCategory(category.id);
+      expect(questions).toHaveLength(0);
+      
+      // Delete the category - this should succeed
+      await expect(AssessmentCategoriesService.deleteCategory(category.id)).resolves.toBeUndefined();
+      
+      // Verify the category is gone
+      const deletedCategory = await AssessmentCategoriesService.getCategoryById(category.id);
+      expect(deletedCategory).toBeNull();
+    });
   });
 
   describe('reorderCategories', () => {

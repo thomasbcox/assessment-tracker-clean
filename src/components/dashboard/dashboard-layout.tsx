@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { sessionManager } from '@/lib/session';
 
 interface User {
@@ -18,6 +18,7 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -87,23 +88,35 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
 
             {/* Center: Navigation */}
-            <div className="flex space-x-8">
+            <div className="flex bg-white/90 backdrop-blur-sm border-2 border-[#2A527A]/20 rounded-xl p-1.5 shadow-lg space-x-1">
               <button
                 onClick={() => router.push('/dashboard')}
-                className="nav-item text-brand-dark-blue/80 hover:text-brand-dark-blue hover:border-brand-dark-blue/50 transition-all duration-200"
+                className={`px-5 py-3 rounded-lg font-medium transition-all duration-200 ${
+                  pathname === '/dashboard' 
+                    ? 'bg-[#2A527A] text-white font-bold shadow-md -translate-y-0.5' 
+                    : 'text-[#2A527A] hover:bg-[#2A527A]/5'
+                }`}
               >
                 Dashboard
               </button>
               <button
                 onClick={() => router.push('/dashboard/assessments')}
-                className="nav-item text-brand-dark-blue/80 hover:text-brand-dark-blue hover:border-brand-dark-blue/50 transition-all duration-200"
+                className={`px-5 py-3 rounded-lg font-medium transition-all duration-200 ${
+                  pathname === '/dashboard/assessments' 
+                    ? 'bg-[#2A527A] text-white font-bold shadow-md -translate-y-0.5' 
+                    : 'text-[#2A527A] hover:bg-[#2A527A]/5'
+                }`}
               >
                 Assessments
               </button>
               {user.role === 'admin' || user.role === 'super-admin' ? (
                 <button
                   onClick={() => router.push('/dashboard/admin')}
-                  className="nav-item text-brand-dark-blue/80 hover:text-brand-dark-blue hover:border-brand-dark-blue/50 transition-all duration-200"
+                  className={`px-5 py-3 rounded-lg font-medium transition-all duration-200 ${
+                    pathname === '/dashboard/admin' 
+                      ? 'bg-[#2A527A] text-white font-bold shadow-md -translate-y-0.5' 
+                      : 'text-[#2A527A] hover:bg-[#2A527A]/5'
+                  }`}
                 >
                   Admin
                 </button>
@@ -111,7 +124,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               {user.role === 'super-admin' ? (
                 <button
                   onClick={() => router.push('/builder')}
-                  className="nav-item text-brand-dark-blue/80 hover:text-brand-dark-blue hover:border-brand-dark-blue/50 transition-all duration-200"
+                  className={`px-5 py-3 rounded-lg font-medium transition-all duration-200 ${
+                    pathname === '/builder' 
+                      ? 'bg-[#2A527A] text-white font-bold shadow-md -translate-y-0.5' 
+                      : 'text-[#2A527A] hover:bg-[#2A527A]/5'
+                  }`}
                 >
                   Builder
                 </button>

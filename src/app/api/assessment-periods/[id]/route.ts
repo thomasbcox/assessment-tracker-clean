@@ -100,50 +100,8 @@ export async function DELETE(
       );
     }
 
-    // Check for existing assessment instances
-    const instances = await AssessmentInstancesService.getInstancesByPeriod(periodId);
-    
-    // Check for existing manager relationships
-    const relationships = await ManagerRelationshipsService.getRelationshipsByPeriod(periodId);
-    
-    // Check for existing invitations
-    const invitations = await InvitationsService.getInvitationsByPeriod(periodId);
-    
-    // Build error message if any child records exist
-    const childRecords = [];
-    if (instances.length > 0) {
-      childRecords.push(`${instances.length} assessment instance(s)`);
-    }
-    if (relationships.length > 0) {
-      childRecords.push(`${relationships.length} manager relationship(s)`);
-    }
-    if (invitations.length > 0) {
-      childRecords.push(`${invitations.length} invitation(s)`);
-    }
-    
-    if (childRecords.length > 0) {
-      return NextResponse.json(
-        { 
-          error: 'Cannot delete assessment period with existing child records',
-          childRecords,
-          totalChildRecords: instances.length + relationships.length + invitations.length,
-          message: `Please remove all ${childRecords.join(', ')} before deleting this period.`
-        },
-        { status: 400 }
-      );
-    }
-
-    // Delete the period (only if no child records exist)
-    try {
-      await AssessmentPeriodsService.deletePeriod(periodId);
-      return NextResponse.json({ message: 'Assessment period deleted successfully' });
-    } catch (error) {
-      console.error('Error deleting assessment period:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete assessment period' },
-        { status: 500 }
-      );
-    }
+    await AssessmentPeriodsService.deletePeriod(periodId);
+    return NextResponse.json({ message: 'Assessment period deleted successfully' });
   } catch (error) {
     if (error instanceof ServiceError) {
       return NextResponse.json(

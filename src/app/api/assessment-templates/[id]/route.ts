@@ -100,50 +100,8 @@ export async function DELETE(
       );
     }
 
-    // Check for existing questions
-    const questions = await AssessmentQuestionsService.getQuestionsByTemplate(templateId);
-    
-    // Check for existing instances
-    const instances = await AssessmentInstancesService.getInstancesByTemplate(templateId);
-    
-    // Check for existing invitations
-    const invitations = await InvitationsService.getInvitationsByTemplate(templateId);
-    
-    // Build error message if any child records exist
-    const childRecords = [];
-    if (questions.length > 0) {
-      childRecords.push(`${questions.length} assessment question(s)`);
-    }
-    if (instances.length > 0) {
-      childRecords.push(`${instances.length} assessment instance(s)`);
-    }
-    if (invitations.length > 0) {
-      childRecords.push(`${invitations.length} invitation(s)`);
-    }
-    
-    if (childRecords.length > 0) {
-      return NextResponse.json(
-        { 
-          error: 'Cannot delete assessment template with existing child records',
-          childRecords,
-          totalChildRecords: questions.length + instances.length + invitations.length,
-          message: `Please remove all ${childRecords.join(', ')} before deleting this template.`
-        },
-        { status: 400 }
-      );
-    }
-
-    // Delete the template (only if no child records exist)
-    try {
-      await AssessmentTemplatesService.deleteTemplate(templateId.toString());
-      return NextResponse.json({ message: 'Assessment template deleted successfully' });
-    } catch (error) {
-      console.error('Error deleting assessment template:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete assessment template' },
-        { status: 500 }
-      );
-    }
+    await AssessmentTemplatesService.deleteTemplate(templateId.toString());
+    return NextResponse.json({ message: 'Assessment template deleted successfully' });
   } catch (error) {
     if (error instanceof ServiceError) {
       return NextResponse.json(

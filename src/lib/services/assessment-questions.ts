@@ -104,6 +104,20 @@ export class AssessmentQuestionsService {
     }
   }
 
+  static async getAllQuestions(): Promise<AssessmentQuestion[]> {
+    try {
+      const questions = await db.select()
+        .from(assessmentQuestions)
+        .where(eq(assessmentQuestions.isActive, 1))
+        .orderBy(assessmentQuestions.displayOrder);
+      
+      return questions.map(question => ({ ...question, createdAt: question.createdAt || '', isActive: question.isActive || 1 }));
+    } catch (error) {
+      logger.dbError('fetch all questions', error as Error);
+      throw error;
+    }
+  }
+
   static async updateQuestion(id: number, data: Partial<AssessmentQuestionData>): Promise<AssessmentQuestion> {
     try {
       const existing = await this.getQuestionById(id);
