@@ -254,7 +254,7 @@ describe('Toast Component', () => {
       const toastContainer = screen.getByText('Success message').closest('div')?.parentElement?.parentElement;
       const parentContainer = toastContainer?.parentElement;
       
-      expect(parentContainer).toHaveClass('fixed', 'top-4', 'right-4', 'z-50');
+      expect(parentContainer).toHaveClass('fixed', 'top-4', 'right-4', 'z-95');
     });
 
     it('renders close button with correct accessibility', () => {

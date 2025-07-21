@@ -18,6 +18,7 @@ export interface AssessmentCategory {
   displayOrder: number;
   isActive: number;
   createdAt: string;
+  assessmentTypeName?: string;
 }
 
 export class AssessmentCategoriesService {
@@ -58,9 +59,28 @@ export class AssessmentCategoriesService {
 
   static async getCategoryById(id: number): Promise<AssessmentCategory | null> {
     try {
-      const [category] = await db.select().from(assessmentCategories).where(eq(assessmentCategories.id, id)).limit(1);
+      const [category] = await db.select({
+        id: assessmentCategories.id,
+        assessmentTypeId: assessmentCategories.assessmentTypeId,
+        name: assessmentCategories.name,
+        description: assessmentCategories.description,
+        displayOrder: assessmentCategories.displayOrder,
+        isActive: assessmentCategories.isActive,
+        createdAt: assessmentCategories.createdAt,
+        assessmentTypeName: assessmentTypes.name,
+      })
+        .from(assessmentCategories)
+        .leftJoin(assessmentTypes, eq(assessmentCategories.assessmentTypeId, assessmentTypes.id))
+        .where(eq(assessmentCategories.id, id))
+        .limit(1);
+      
       if (!category) return null;
-      return { ...category, createdAt: category.createdAt || '', isActive: category.isActive || 1 };
+      return { 
+        ...category, 
+        createdAt: category.createdAt || '', 
+        isActive: category.isActive || 1,
+        assessmentTypeName: category.assessmentTypeName || undefined
+      };
     } catch (error) {
       logger.dbError('fetch assessment category by id', error as Error, { id });
       throw error;

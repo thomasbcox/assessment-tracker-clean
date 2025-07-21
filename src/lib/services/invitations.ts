@@ -355,6 +355,20 @@ export class InvitationsService {
       throw error;
     }
   }
+
+  static async getAllInvitations(): Promise<Invitation[]> {
+    try {
+      const invitationRows = await db.select().from(invitations)
+        .orderBy(invitations.invitedAt);
+      return invitationRows.map((invitation: any) => {
+        const { reminderCount, ...rest } = invitation;
+        return { ...rest, invitedAt: invitation.invitedAt || '', status: invitation.status || 'pending', reminderCount: Number(reminderCount ?? 0) };
+      });
+    } catch (error) {
+      logger.dbError('fetch all invitations', error as Error);
+      throw error;
+    }
+  }
 }
 
 // Export individual functions for API endpoints

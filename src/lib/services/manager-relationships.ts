@@ -245,4 +245,30 @@ export class ManagerRelationshipsService {
       throw error;
     }
   }
-} 
+
+  static async getAllRelationships(): Promise<ManagerRelationship[]> {
+    try {
+      const relationships = await db.select().from(managerRelationships)
+        .orderBy(managerRelationships.createdAt);
+      
+      return relationships.map(relationship => ({ ...relationship, createdAt: relationship.createdAt || '' }));
+    } catch (error) {
+      logger.dbError('fetch all manager relationships', error as Error);
+      throw error;
+    }
+  }
+}
+
+// Export individual functions for API endpoints
+export const createRelationship = ManagerRelationshipsService.createRelationship;
+export const getRelationshipById = ManagerRelationshipsService.getRelationshipById;
+export const getSubordinatesByManager = ManagerRelationshipsService.getSubordinatesByManager;
+export const getManagerBySubordinate = ManagerRelationshipsService.getManagerBySubordinate;
+export const getRelationshipsByPeriod = ManagerRelationshipsService.getRelationshipsByPeriod;
+export const getRelationshipsByManager = ManagerRelationshipsService.getRelationshipsByManager;
+export const getRelationshipsBySubordinate = ManagerRelationshipsService.getRelationshipsBySubordinate;
+export const updateRelationship = ManagerRelationshipsService.updateRelationship;
+export const deleteRelationship = ManagerRelationshipsService.deleteRelationship;
+export const deleteRelationshipsByPeriod = ManagerRelationshipsService.deleteRelationshipsByPeriod;
+export const getRelationshipHierarchy = ManagerRelationshipsService.getRelationshipHierarchy;
+export const getAllRelationships = ManagerRelationshipsService.getAllRelationships; 

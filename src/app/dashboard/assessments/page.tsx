@@ -88,11 +88,7 @@ export default function AssessmentsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#DDE5CC]">
         <div className="glass-card rounded-2xl p-8 text-center">
-          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
+
           <h2 className="text-xl font-semibold text-brand-dark-blue mb-2">Authentication Required</h2>
           <p className="text-brand-dark-blue/70 mb-4">Please log in to access assessments.</p>
           <button 
@@ -119,9 +115,6 @@ export default function AssessmentsPage() {
             onClick={() => setShowCreateModal(true)}
             className="btn-modern bg-brand-dark-blue text-white hover:bg-brand-dark-blue/90"
           >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
             Create Assessment
           </button>
         </div>
@@ -165,26 +158,17 @@ export default function AssessmentsPage() {
               <div className="space-y-2 text-sm text-brand-dark-blue/60">
                 {assessment.periodName && (
                   <div className="flex items-center">
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
                     Period: {assessment.periodName}
                   </div>
                 )}
                 
                 {assessment.dueDate && (
                   <div className="flex items-center">
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
                     Due: {new Date(assessment.dueDate).toLocaleDateString()}
                   </div>
                 )}
 
                 <div className="flex items-center">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
                   Created: {new Date(assessment.createdAt).toLocaleDateString()}
                 </div>
               </div>
@@ -206,7 +190,7 @@ export default function AssessmentsPage() {
 
         {filteredAssessments.length === 0 && (
           <div className="glass-card p-12 text-center">
-            <div className="text-6xl mb-4">📋</div>
+
             <h3 className="text-xl font-semibold text-brand-dark-blue mb-2">No assessments found</h3>
             <p className="text-brand-dark-blue/70 mb-6">
               {filter === 'all' 
@@ -228,7 +212,7 @@ export default function AssessmentsPage() {
 
       {/* Create Assessment Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-85">
           <div className="glass-card p-8 max-w-md w-full mx-4">
             <h2 className="text-2xl font-bold text-brand-dark-blue mb-6">Create Assessment</h2>
             

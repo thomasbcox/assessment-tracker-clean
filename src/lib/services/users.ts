@@ -160,11 +160,15 @@ export async function createUser(userData: {
 export async function updateUser(userId: string, userData: {
   firstName?: string;
   lastName?: string;
+  email?: string;
   role?: string;
   isActive?: number;
 }): Promise<User> {
   try {
     validateRequired(userId, 'userId');
+    if (userData.email) {
+      validateEmail(userData.email);
+    }
     if (userData.role) {
       validateUserRole(userData.role);
     }

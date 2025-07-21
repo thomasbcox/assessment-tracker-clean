@@ -303,9 +303,10 @@ body {
 /* Header styles */
 .header-glass {
   background: rgba(255, 255, 255, 0.3); /* Much more transparent white */
-  backdrop-filter: blur(20px);
+  /* Removed backdrop-filter to eliminate stacking context isolation */
   border-bottom: 1px solid rgba(42, 82, 122, 0.1);
   box-shadow: 0 4px 20px rgba(42, 82, 122, 0.05);
+  z-index: 75;
 }
 
 /* Enhanced Tab Styles */

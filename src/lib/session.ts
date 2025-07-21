@@ -76,6 +76,22 @@ class SessionManager {
     }
   }
 
+  updateUser(updatedUser: AuthUser): void {
+    const session = this.getSession();
+    if (session) {
+      // Update the user in the session and save it back
+      const updatedSession: Session = {
+        ...session,
+        user: updatedUser,
+      };
+      
+      const storage = this.getStorage();
+      if (storage) {
+        storage.setItem(this.SESSION_KEY, JSON.stringify(updatedSession));
+      }
+    }
+  }
+
   // Check if session is about to expire (within 1 hour)
   isSessionExpiringSoon(): boolean {
     const session = this.getSession();

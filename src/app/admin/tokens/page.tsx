@@ -98,7 +98,7 @@ export default function TokensPage() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4">🚫</div>
+
           <h3 className="text-xl font-semibold mb-2">Access Denied</h3>
           <p className="text-gray-600 mb-6">
             You don't have permission to access this page.

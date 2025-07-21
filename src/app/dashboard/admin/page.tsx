@@ -4,6 +4,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout';
 import { sessionManager } from '@/lib/session';
+import { useToast } from '@/components/ui/toast';
+import { useConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 interface User {
   id: string;
@@ -25,8 +32,17 @@ interface SystemStats {
   lastBackup: string;
 }
 
+interface NewUserData {
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+}
+
 export default function AdminDashboardPage() {
   const router = useRouter();
+  const { addToast } = useToast();
+  const { showConfirm } = useConfirmDialog();
   const [user, setUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<SystemStats>({
@@ -39,63 +55,238 @@ export default function AdminDashboardPage() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'system' | 'tokens'>('overview');
+  
+  // Modal states
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [newUserData, setNewUserData] = useState<NewUserData>({
+    email: '',
+    firstName: '',
+    lastName: '',
+    role: 'user'
+  });
 
   useEffect(() => {
     const currentUser = sessionManager.getUser();
     if (currentUser) {
       // Check if user has admin privileges
-      if (currentUser.role !== 'admin' && currentUser.role !== 'super-admin') {
+      if (currentUser.role !== 'admin' && currentUser.role !== 'super_admin') {
         router.push('/dashboard');
         return;
       }
       
       setUser(currentUser);
-      
-      // Mock data for demonstration
-      setUsers([
-        {
-          id: '1',
-          email: 'john.doe@example.com',
-          firstName: 'John',
-          lastName: 'Doe',
-          role: 'manager',
-          createdAt: '2024-01-15T10:00:00Z',
-          lastLogin: '2024-01-25T14:30:00Z',
-          status: 'active',
-        },
-        {
-          id: '2',
-          email: 'jane.smith@example.com',
-          firstName: 'Jane',
-          lastName: 'Smith',
-          role: 'assessor',
-          createdAt: '2024-01-10T09:00:00Z',
-          lastLogin: '2024-01-24T16:45:00Z',
-          status: 'active',
-        },
-        {
-          id: '3',
-          email: 'bob.wilson@example.com',
-          firstName: 'Bob',
-          lastName: 'Wilson',
-          role: 'manager',
-          createdAt: '2024-01-05T11:00:00Z',
-          lastLogin: '2024-01-20T12:15:00Z',
-          status: 'inactive',
-        },
-      ]);
-
-      setStats({
-        totalUsers: 15,
-        activeUsers: 12,
-        totalAssessments: 47,
-        completedAssessments: 23,
-        systemUptime: '15 days',
-        lastBackup: '2024-01-25 02:00:00',
-      });
+      loadAdminData();
     }
     setIsLoading(false);
   }, [router]);
+
+  const loadAdminData = async () => {
+    try {
+      // Load users
+      const usersRes = await fetch('/api/users');
+      if (usersRes.ok) {
+        const usersData = await usersRes.json();
+        setUsers(usersData);
+        
+        // Calculate stats from real data
+        const totalUsers = usersData.length;
+        const activeUsers = usersData.filter((u: User) => u.status !== 'suspended').length;
+        
+        // Load assessment data for stats
+        const [assessmentsRes, instancesRes] = await Promise.all([
+          fetch('/api/assessment-templates'),
+          fetch('/api/assessment-instances')
+        ]);
+        
+        let totalAssessments = 0;
+        let completedAssessments = 0;
+        
+        if (assessmentsRes.ok) {
+          const assessmentsData = await assessmentsRes.json();
+          totalAssessments = assessmentsData.length;
+        }
+        
+        if (instancesRes.ok) {
+          const instancesData = await instancesRes.json();
+          completedAssessments = instancesData.filter((i: any) => i.completedAt).length;
+        }
+        
+        setStats({
+          totalUsers,
+          activeUsers,
+          totalAssessments,
+          completedAssessments,
+          systemUptime: '15 days', // This could be calculated from server start time
+          lastBackup: '2024-01-25 02:00:00', // This would come from actual backup system
+        });
+      } else {
+        addToast({ message: 'Failed to load users', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Error loading admin data:', error);
+      addToast({ message: 'Failed to load admin data', type: 'error' });
+    }
+  };
+
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newUserData.email || !newUserData.role) {
+      addToast({ message: 'Email and role are required', type: 'error' });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUserData)
+      });
+
+      if (response.ok) {
+        addToast({ message: 'User created successfully', type: 'success' });
+        setShowAddUserModal(false);
+        setNewUserData({ email: '', firstName: '', lastName: '', role: 'user' });
+        loadAdminData(); // Refresh the data
+      } else {
+        const error = await response.json();
+        addToast({ message: error.error || 'Failed to create user', type: 'error' });
+      }
+    } catch (error) {
+      addToast({ message: 'Failed to create user', type: 'error' });
+    }
+  };
+
+  const handleEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingUser) return;
+
+    try {
+      const response = await fetch(`/api/users/${editingUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: editingUser.firstName,
+          lastName: editingUser.lastName,
+          email: editingUser.email,
+          role: editingUser.role
+        })
+      });
+
+      if (response.ok) {
+        addToast({ message: 'User updated successfully', type: 'success' });
+        setShowEditUserModal(false);
+        setEditingUser(null);
+        loadAdminData(); // Refresh the data
+      } else {
+        const error = await response.json();
+        addToast({ message: error.error || 'Failed to update user', type: 'error' });
+      }
+    } catch (error) {
+      addToast({ message: 'Failed to update user', type: 'error' });
+    }
+  };
+
+  const handleSuspendUser = async (userId: string) => {
+    const confirmed = await showConfirm({
+      title: 'Suspend User',
+      message: 'Are you sure you want to suspend this user? They will not be able to access the system.',
+      variant: 'danger'
+    });
+
+    if (confirmed) {
+      try {
+        const response = await fetch(`/api/users/${userId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isActive: 0 })
+        });
+
+        if (response.ok) {
+          addToast({ message: 'User suspended successfully', type: 'success' });
+          loadAdminData(); // Refresh the data
+        } else {
+          const error = await response.json();
+          addToast({ message: error.error || 'Failed to suspend user', type: 'error' });
+        }
+      } catch (error) {
+        addToast({ message: 'Failed to suspend user', type: 'error' });
+      }
+    }
+  };
+
+  const handleExportData = async () => {
+    try {
+      // This would typically generate a CSV or JSON export
+      const exportData = {
+        users: users,
+        stats: stats,
+        exportDate: new Date().toISOString()
+      };
+      
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `admin-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      addToast({ message: 'Data exported successfully', type: 'success' });
+    } catch (error) {
+      addToast({ message: 'Failed to export data', type: 'error' });
+    }
+  };
+
+  const handleSystemBackup = async () => {
+    try {
+      // This would typically call a backup API
+      addToast({ message: 'Backup initiated successfully (placeholder - no actual backup created)', type: 'success' });
+    } catch (error) {
+      addToast({ message: 'Failed to create backup', type: 'error' });
+    }
+  };
+
+  const handleClearCache = async () => {
+    try {
+      // This would typically call a cache clearing API
+      addToast({ message: 'Cache cleared successfully (placeholder - no actual cache cleared)', type: 'success' });
+    } catch (error) {
+      addToast({ message: 'Failed to clear cache', type: 'error' });
+    }
+  };
+
+  const handleViewLogs = async () => {
+    try {
+      // This would typically open a logs viewer or download logs
+      addToast({ message: 'View Logs (placeholder - no actual logs displayed)', type: 'success' });
+    } catch (error) {
+      addToast({ message: 'Failed to view logs', type: 'error' });
+    }
+  };
+
+  const handleGenerateToken = async () => {
+    try {
+      // This would typically generate a new API token
+      addToast({ message: 'Token generated successfully (placeholder - no actual token created)', type: 'success' });
+    } catch (error) {
+      addToast({ message: 'Failed to generate token', type: 'error' });
+    }
+  };
+
+  const handleRegenerateToken = async (tokenName: string) => {
+    try {
+      // This would typically regenerate an existing API token
+      addToast({ message: `${tokenName} token regenerated successfully (placeholder - no actual token regenerated)`, type: 'success' });
+    } catch (error) {
+      addToast({ message: 'Failed to regenerate token', type: 'error' });
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -108,12 +299,17 @@ export default function AdminDashboardPage() {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'super-admin': return 'bg-purple-600 text-white';
+              case 'super_admin': return 'bg-purple-600 text-white';
       case 'admin': return 'bg-brand-dark-blue text-white';
       case 'manager': return 'bg-brand-dark-teal text-white';
-      case 'assessor': return 'bg-brand-medium-blue text-white';
+      case 'user': return 'bg-brand-medium-blue text-white';
       default: return 'bg-gray-500 text-white';
     }
+  };
+
+  const getDisplayName = (user: User) => {
+    const fullName = `${user.firstName} ${user.lastName}`.trim();
+    return fullName || user.email;
   };
 
   if (isLoading) {
@@ -126,7 +322,7 @@ export default function AdminDashboardPage() {
     );
   }
 
-  if (!user || (user.role !== 'admin' && user.role !== 'super-admin')) {
+      if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
     return (
       <DashboardLayout>
         <div className="glass-card p-12 text-center">
@@ -193,11 +389,6 @@ export default function AdminDashboardPage() {
                     <p className="text-sm font-medium text-brand-dark-blue/70">Total Users</p>
                     <p className="text-2xl font-bold text-brand-dark-blue">{stats.totalUsers}</p>
                   </div>
-                  <div className="w-12 h-12 bg-brand-dark-blue/10 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-brand-dark-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                    </svg>
-                  </div>
                 </div>
               </div>
 
@@ -206,11 +397,6 @@ export default function AdminDashboardPage() {
                   <div>
                     <p className="text-sm font-medium text-brand-dark-blue/70">Active Users</p>
                     <p className="text-2xl font-bold text-brand-dark-blue">{stats.activeUsers}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-brand-vibrant-teal/10 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-brand-vibrant-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
                   </div>
                 </div>
               </div>
@@ -221,11 +407,6 @@ export default function AdminDashboardPage() {
                     <p className="text-sm font-medium text-brand-dark-blue/70">Total Assessments</p>
                     <p className="text-2xl font-bold text-brand-dark-blue">{stats.totalAssessments}</p>
                   </div>
-                  <div className="w-12 h-12 bg-brand-dark-teal/10 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-brand-dark-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
                 </div>
               </div>
 
@@ -235,11 +416,6 @@ export default function AdminDashboardPage() {
                     <p className="text-sm font-medium text-brand-dark-blue/70">Completed</p>
                     <p className="text-2xl font-bold text-brand-dark-blue">{stats.completedAssessments}</p>
                   </div>
-                  <div className="w-12 h-12 bg-brand-medium-blue/10 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-brand-medium-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
                 </div>
               </div>
             </div>
@@ -248,37 +424,31 @@ export default function AdminDashboardPage() {
             <div className="glass-card p-6">
               <h3 className="text-lg font-semibold text-brand-dark-blue mb-4">Quick Actions</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {user.role === 'super-admin' && (
+                {user.role === 'super_admin' && (
                   <button
                     onClick={() => router.push('/builder')}
                     className="glass-card p-4 text-left hover:bg-white/20 transition-all duration-200"
                   >
-                    <div className="w-8 h-8 bg-brand-dark-blue/10 rounded-lg flex items-center justify-center mb-2">
-                      <svg className="w-4 h-4 text-brand-dark-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </div>
                     <h4 className="font-medium text-brand-dark-blue">Template Builder</h4>
                     <p className="text-sm text-brand-dark-blue/70">Create and manage assessment templates</p>
                   </button>
                 )}
-                <button className="btn-modern bg-brand-dark-blue text-white hover:bg-brand-dark-blue/90">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
+                <button 
+                  onClick={() => setShowAddUserModal(true)}
+                  className="btn-modern bg-brand-dark-blue text-white hover:bg-brand-dark-blue/90"
+                >
                   Add New User
                 </button>
-                <button className="btn-modern bg-brand-dark-teal text-white hover:bg-brand-dark-teal/90">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                  </svg>
+                <button 
+                  onClick={handleExportData}
+                  className="btn-modern bg-brand-dark-teal text-white hover:bg-brand-dark-teal/90"
+                >
                   Export Data
                 </button>
-                <button className="btn-modern bg-brand-vibrant-teal text-white hover:bg-brand-vibrant-teal/90">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
+                <button 
+                  onClick={() => setActiveTab('system')}
+                  className="btn-modern bg-brand-vibrant-teal text-white hover:bg-brand-vibrant-teal/90"
+                >
                   System Settings
                 </button>
               </div>
@@ -291,10 +461,10 @@ export default function AdminDashboardPage() {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h3 className="text-xl font-semibold text-brand-dark-blue">User Management</h3>
-              <button className="btn-modern bg-brand-dark-blue text-white hover:bg-brand-dark-blue/90">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
+              <button 
+                onClick={() => setShowAddUserModal(true)}
+                className="btn-modern bg-brand-dark-blue text-white hover:bg-brand-dark-blue/90"
+              >
                 Add User
               </button>
             </div>
@@ -314,7 +484,7 @@ export default function AdminDashboardPage() {
                         Status
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-brand-dark-blue uppercase tracking-wider">
-                        Last Login
+                        Created
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-brand-dark-blue uppercase tracking-wider">
                         Actions
@@ -333,7 +503,7 @@ export default function AdminDashboardPage() {
                             </div>
                             <div className="ml-4">
                               <div className="text-sm font-medium text-brand-dark-blue">
-                                {user.firstName} {user.lastName}
+                                {getDisplayName(user)}
                               </div>
                               <div className="text-sm text-brand-dark-blue/70">{user.email}</div>
                             </div>
@@ -345,18 +515,27 @@ export default function AdminDashboardPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(user.status || 'inactive')}`}>
-                            {user.status || 'inactive'}
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(user.status || 'active')}`}>
+                            {user.status || 'active'}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-brand-dark-blue/70">
-                          {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
+                          {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button className="text-brand-dark-blue hover:text-brand-dark-blue/70 mr-3">
+                          <button 
+                            onClick={() => {
+                              setEditingUser(user);
+                              setShowEditUserModal(true);
+                            }}
+                            className="text-brand-dark-blue hover:text-brand-dark-blue/70 mr-3"
+                          >
                             Edit
                           </button>
-                          <button className="text-red-600 hover:text-red-800">
+                          <button 
+                            onClick={() => handleSuspendUser(user.id)}
+                            className="text-red-600 hover:text-red-800"
+                          >
                             Suspend
                           </button>
                         </td>
@@ -398,22 +577,22 @@ export default function AdminDashboardPage() {
               <div className="glass-card p-6">
                 <h3 className="text-lg font-semibold text-brand-dark-blue mb-4">System Actions</h3>
                 <div className="space-y-3">
-                  <button className="w-full btn-modern bg-brand-dark-blue text-white hover:bg-brand-dark-blue/90">
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
+                  <button 
+                    onClick={handleSystemBackup}
+                    className="w-full btn-modern bg-brand-dark-blue text-white hover:bg-brand-dark-blue/90"
+                  >
                     Create Backup
                   </button>
-                  <button className="w-full btn-modern bg-brand-dark-teal text-white hover:bg-brand-dark-teal/90">
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
+                  <button 
+                    onClick={handleClearCache}
+                    className="w-full btn-modern bg-brand-dark-teal text-white hover:bg-brand-dark-teal/90"
+                  >
                     Clear Cache
                   </button>
-                  <button className="w-full btn-modern bg-brand-vibrant-teal text-white hover:bg-brand-vibrant-teal/90">
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
+                  <button 
+                    onClick={handleViewLogs}
+                    className="w-full btn-modern bg-brand-vibrant-teal text-white hover:bg-brand-vibrant-teal/90"
+                  >
                     View Logs
                   </button>
                 </div>
@@ -427,10 +606,10 @@ export default function AdminDashboardPage() {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h3 className="text-xl font-semibold text-brand-dark-blue">Token Management</h3>
-              <button className="btn-modern bg-brand-dark-blue text-white hover:bg-brand-dark-blue/90">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
+              <button 
+                onClick={handleGenerateToken}
+                className="btn-modern bg-brand-dark-blue text-white hover:bg-brand-dark-blue/90"
+              >
                 Generate New Token
               </button>
             </div>
@@ -445,7 +624,10 @@ export default function AdminDashboardPage() {
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className="text-xs bg-brand-vibrant-teal text-white px-2 py-1 rounded">Active</span>
-                    <button className="text-brand-dark-blue hover:text-brand-dark-blue/70 text-sm">
+                    <button 
+                      onClick={() => handleRegenerateToken('Assessment API')}
+                      className="text-brand-dark-blue hover:text-brand-dark-blue/70 text-sm"
+                    >
                       Regenerate
                     </button>
                   </div>
@@ -458,7 +640,10 @@ export default function AdminDashboardPage() {
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className="text-xs bg-gray-400 text-white px-2 py-1 rounded">Expired</span>
-                    <button className="text-brand-dark-blue hover:text-brand-dark-blue/70 text-sm">
+                    <button 
+                      onClick={() => handleRegenerateToken('User Management')}
+                      className="text-brand-dark-blue hover:text-brand-dark-blue/70 text-sm"
+                    >
                       Regenerate
                     </button>
                   </div>
@@ -483,6 +668,163 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Add User Modal */}
+        {showAddUserModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
+            <Card className="w-full max-w-md mx-4 relative z-[200]">
+              <CardHeader>
+                <CardTitle>Add New User</CardTitle>
+                <CardDescription>Create a new user account</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleAddUser} className="space-y-4">
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={newUserData.email}
+                      onChange={(e) => setNewUserData(prev => ({ ...prev, email: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      value={newUserData.firstName}
+                      onChange={(e) => setNewUserData(prev => ({ ...prev, firstName: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      value={newUserData.lastName}
+                      onChange={(e) => setNewUserData(prev => ({ ...prev, lastName: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="role">Role</Label>
+                                          <Select 
+                        value={newUserData.role} 
+                        onValueChange={(value) => setNewUserData(prev => ({ ...prev, role: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">User</SelectItem>
+                          <SelectItem value="manager">Manager</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          {user?.role === 'super_admin' && (
+                            <SelectItem value="super_admin">Super Admin</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                  </div>
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowAddUserModal(false)}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="flex-1 bg-brand-dark-blue text-white hover:bg-brand-dark-blue/90"
+                    >
+                      Create User
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Edit User Modal */}
+        {showEditUserModal && editingUser && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
+            <Card className="w-full max-w-md mx-4 relative z-[200]">
+              <CardHeader>
+                <CardTitle>Edit User</CardTitle>
+                <CardDescription>Update user information</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleEditUser} className="space-y-4">
+                  <div>
+                    <Label htmlFor="edit-email">Email</Label>
+                    <Input
+                      id="edit-email"
+                      type="email"
+                      value={editingUser.email}
+                      onChange={(e) => setEditingUser(prev => prev ? { ...prev, email: e.target.value } : null)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-firstName">First Name</Label>
+                    <Input
+                      id="edit-firstName"
+                      value={editingUser.firstName || ''}
+                      onChange={(e) => setEditingUser(prev => prev ? { ...prev, firstName: e.target.value } : null)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-lastName">Last Name</Label>
+                    <Input
+                      id="edit-lastName"
+                      value={editingUser.lastName || ''}
+                      onChange={(e) => setEditingUser(prev => prev ? { ...prev, lastName: e.target.value } : null)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-role">Role</Label>
+                                          <Select 
+                        value={editingUser.role} 
+                        onValueChange={(value) => setEditingUser(prev => prev ? { ...prev, role: value } : null)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">User</SelectItem>
+                          <SelectItem value="manager">Manager</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          {user?.role === 'super_admin' && (
+                            <SelectItem value="super_admin">Super Admin</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                  </div>
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowEditUserModal(false);
+                        setEditingUser(null);
+                      }}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="flex-1 bg-brand-dark-blue text-white hover:bg-brand-dark-blue/90"
+                    >
+                      Update User
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>

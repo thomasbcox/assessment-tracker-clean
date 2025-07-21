@@ -19,7 +19,7 @@ describe('LoginForm', () => {
     expect(screen.getByText('Enter your email to receive a secure login link')).toBeInTheDocument();
     expect(screen.getByLabelText('Email Address')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Send Login Link' })).toBeInTheDocument();
-    expect(screen.getByText('🔒 Secure passwordless authentication')).toBeInTheDocument();
+    expect(screen.getByText('Secure passwordless authentication')).toBeInTheDocument();
   });
 
   it('should show validation error for empty email', async () => {

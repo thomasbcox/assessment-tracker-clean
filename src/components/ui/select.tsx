@@ -1,4 +1,5 @@
 import * as React from "react"
+import * as ReactDOM from "react-dom"
 import { cn } from "@/lib/utils"
 
 export interface SelectProps {
@@ -41,15 +42,18 @@ const SelectContext = React.createContext<{
   required?: boolean
   isOpen: boolean
   setIsOpen: (open: boolean) => void
+  triggerRef: React.RefObject<HTMLButtonElement | null>
 }>({
   isOpen: false,
   setIsOpen: () => {},
+  triggerRef: React.createRef(),
 })
 
 const Select = React.forwardRef<HTMLDivElement, SelectProps>(
   ({ value, defaultValue, onValueChange, disabled, required, children, className, ...props }, ref) => {
     const [isOpen, setIsOpen] = React.useState(false)
     const [internalValue, setInternalValue] = React.useState(defaultValue || value || "")
+    const triggerRef = React.useRef<HTMLButtonElement>(null)
     
     const handleValueChange = (newValue: string) => {
       setInternalValue(newValue)
@@ -65,6 +69,7 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
         required,
         isOpen,
         setIsOpen,
+        triggerRef,
       }}>
         <div 
           className={cn("relative", className)} 
@@ -81,7 +86,7 @@ Select.displayName = "Select"
 
 const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerProps>(
   ({ className, children, ...props }, ref) => {
-    const { disabled, required, isOpen, setIsOpen } = React.useContext(SelectContext)
+    const { disabled, required, isOpen, setIsOpen, triggerRef } = React.useContext(SelectContext)
     
     return (
       <button
@@ -97,7 +102,14 @@ const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerProps>(
           className
         )}
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        ref={ref}
+        ref={(node) => {
+          triggerRef.current = node
+          if (typeof ref === 'function') {
+            ref(node)
+          } else if (ref) {
+            ref.current = node
+          }
+        }}
         {...props}
       >
         {children}
@@ -109,19 +121,49 @@ SelectTrigger.displayName = "SelectTrigger"
 
 const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(
   ({ className, children, ...props }, ref) => {
-    const { isOpen } = React.useContext(SelectContext)
+    const { isOpen, triggerRef } = React.useContext(SelectContext)
+    const [position, setPosition] = React.useState({ top: 0, left: 0, width: 0 })
+    
+    React.useEffect(() => {
+      if (isOpen && triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect()
+        setPosition({
+          top: rect.bottom + window.scrollY,
+          left: rect.left + window.scrollX,
+          width: rect.width,
+        })
+      }
+    }, [isOpen])
     
     if (!isOpen) return null
     
-    return (
+    return ReactDOM.createPortal(
       <div
         role="listbox"
-        className={cn("absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border bg-popover text-popover-foreground shadow-md", className)}
+        className={cn(
+          "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+          className
+        )}
+        style={{
+          position: 'fixed',
+          top: position.top,
+          left: position.left,
+          width: position.width,
+          maxHeight: '240px',
+          overflow: 'auto',
+          borderRadius: '6px',
+          border: '1px solid #e2e8f0',
+          backgroundColor: 'white',
+          color: 'black',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+          zIndex: 999999,
+        }}
         ref={ref}
         {...props}
       >
         {children}
-      </div>
+      </div>,
+      document.body
     )
   }
 )

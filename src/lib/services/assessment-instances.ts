@@ -194,6 +194,16 @@ export class AssessmentInstancesService {
       throw error;
     }
   }
+
+  static async getAllInstances(): Promise<AssessmentInstance[]> {
+    try {
+      const results = await db.select().from(assessmentInstances);
+      return results.map(instance => ({ ...instance, status: instance.status || 'pending', createdAt: instance.createdAt || '' }));
+    } catch (error) {
+      logger.dbError('fetch all assessment instances', error as Error);
+      throw error;
+    }
+  }
 } 
 
 // Export individual functions for API endpoints
@@ -205,4 +215,5 @@ export const getInstancesByUser = AssessmentInstancesService.getInstancesByUser;
 export const getInstancesByPeriod = AssessmentInstancesService.getInstancesByPeriod;
 export const getInstancesByTemplate = AssessmentInstancesService.getInstancesByTemplate;
 export const updateInstanceStatus = AssessmentInstancesService.updateInstanceStatus;
-export const deleteInstance = AssessmentInstancesService.deleteInstance; 
+export const deleteInstance = AssessmentInstancesService.deleteInstance;
+export const getAllInstances = AssessmentInstancesService.getAllInstances; 

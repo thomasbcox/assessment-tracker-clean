@@ -21,8 +21,8 @@ export default function DebugPage() {
 
   const createTestUser = () => {
     const testUser = {
-      id: 'test-user-1',
-      email: 'test@example.com',
+      id: 'user-1753020245423-xrf9j3bmm',
+      email: 'user-1753020245423@example.com',
       firstName: 'Test',
       lastName: 'User',
       role: 'user'
@@ -34,10 +34,10 @@ export default function DebugPage() {
   const loginAsSuperAdmin = () => {
     const user = {
       id: 'super1',
-      email: 'superadmin@example.com',
+      email: 'super1@example.com',
       firstName: 'Super',
       lastName: 'Admin',
-      role: 'super-admin'
+      role: 'super_admin'
     };
     sessionManager.createSession(user, 'super-admin-token');
     window.location.reload();
@@ -45,9 +45,9 @@ export default function DebugPage() {
 
   const loginAsAdmin = () => {
     const user = {
-      id: 'admin1',
-      email: 'admin@example.com',
-      firstName: 'Admin',
+      id: 'user-1753020245422-6u972rsmc',
+      email: 'admin-1753020245422@example.com',
+      firstName: 'Test',
       lastName: 'User',
       role: 'admin'
     };
@@ -57,9 +57,9 @@ export default function DebugPage() {
 
   const loginAsManager = () => {
     const user = {
-      id: 'manager1',
-      email: 'manager@example.com',
-      firstName: 'Manager',
+      id: 'user-1753020244364-fcetftc91',
+      email: 'manager-1753020244364@example.com',
+      firstName: 'Test',
       lastName: 'User',
       role: 'manager'
     };
@@ -69,9 +69,9 @@ export default function DebugPage() {
 
   const loginAsEmployee = () => {
     const user = {
-      id: 'employee1',
-      email: 'employee@example.com',
-      firstName: 'Employee',
+      id: 'user-1753020245420-dfpa0gnh6',
+      email: 'user-1753020245420@example.com',
+      firstName: 'Test',
       lastName: 'User',
       role: 'user'
     };
@@ -139,7 +139,22 @@ export default function DebugPage() {
         </div>
 
         <div className="bg-white rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Quick Login</h2>
+          <h2 className="text-xl font-semibold mb-4">Quick Login (Using Real Database Users)</h2>
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm">
+            <p className="font-semibold text-blue-800">Note:</p>
+            <p className="text-blue-700">These buttons now use actual user IDs from the database, so profile updates and other features will work correctly.</p>
+          </div>
+          
+          <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded text-xs">
+            <p className="font-semibold text-gray-800 mb-2">User IDs being used:</p>
+            <ul className="text-gray-700 space-y-1">
+              <li><strong>Super Admin:</strong> super1</li>
+              <li><strong>Admin:</strong> user-1753020245422-6u972rsmc</li>
+              <li><strong>Manager:</strong> user-1753020244364-fcetftc91</li>
+              <li><strong>Employee:</strong> user-1753020245420-dfpa0gnh6</li>
+            </ul>
+          </div>
+          
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             <button 
               onClick={loginAsSuperAdmin}

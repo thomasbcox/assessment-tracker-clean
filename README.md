@@ -46,7 +46,7 @@ npm install
 
 3. Set up the database:
 ```bash
-npm run setup-db
+npm run setup:db
 ```
 
 4. Start the development server:
@@ -55,6 +55,60 @@ npm run dev
 ```
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Database Management
+
+### Initial Setup
+
+The database setup script creates all necessary tables and populates them with test data:
+
+```bash
+npm run setup:db
+```
+
+This script creates:
+- **Debug Users**: Users with specific IDs that match the debug page
+- **Sample Users**: Additional users for testing different roles
+- **Assessment Types**: Leadership, Team Performance, Skills Assessment
+- **Assessment Periods**: Q1-Q4 2024 (Q4 is active)
+- **Assessment Templates**: Templates for each assessment type
+- **Assessment Categories**: Categories for organizing questions
+- **Sample Questions**: Example questions for the Leadership template
+- **Manager Relationships**: Sample reporting relationships
+
+### Reset Database
+
+To completely reset the database and start fresh:
+
+```bash
+npm run reset:db
+```
+
+This will clear all existing data and recreate everything from scratch.
+
+### Backup Database
+
+To create a backup of the current database:
+
+```bash
+npm run backup:db
+```
+
+This creates a timestamped backup file in the project root (e.g., `dev-backup-2024-01-27T10-30-45-123Z.db`).
+
+### Debug Users
+
+The setup script creates these specific users for testing:
+
+| Role | Email | ID |
+|------|-------|----|
+| Super Admin | super1@example.com | super1 |
+| Admin | admin-1753020245422@example.com | user-1753020245422-6u972rsmc |
+| Manager | manager-1753020244364@example.com | user-1753020244364-fcetftc91 |
+| Employee | user-1753020245420@example.com | user-1753020245420-dfpa0gnh6 |
+| Test User | user-1753020245423@example.com | user-1753020245423-xrf9j3bmm |
+
+Visit `/debug` to quickly log in as any of these users.
 
 ## Testing
 

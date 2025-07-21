@@ -74,9 +74,6 @@ export function LoginForm() {
         {/* Logo and Branding */}
         <div className="text-center mb-8 animate-fade-in-up">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full mb-6 shadow-lg">
-            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
           </div>
           <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">
             Assessment Tracker
@@ -146,7 +143,7 @@ export function LoginForm() {
           </form>
           
           <div className="text-center mt-8 text-sm text-gray-500">
-            <p>🔒 Secure passwordless authentication</p>
+            <p>Secure passwordless authentication</p>
           </div>
         </div>
       </div>

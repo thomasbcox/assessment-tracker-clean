@@ -17,6 +17,7 @@ export interface AssessmentQuestion {
   displayOrder: number;
   isActive: number;
   createdAt: string;
+  templateName?: string;
 }
 
 export class AssessmentQuestionsService {
@@ -89,15 +90,30 @@ export class AssessmentQuestionsService {
 
   static async getQuestionsByCategory(categoryId: number): Promise<AssessmentQuestion[]> {
     try {
-      const questions = await db.select()
+      const questions = await db.select({
+        id: assessmentQuestions.id,
+        templateId: assessmentQuestions.templateId,
+        categoryId: assessmentQuestions.categoryId,
+        questionText: assessmentQuestions.questionText,
+        displayOrder: assessmentQuestions.displayOrder,
+        isActive: assessmentQuestions.isActive,
+        createdAt: assessmentQuestions.createdAt,
+        templateName: assessmentTemplates.name,
+      })
         .from(assessmentQuestions)
+        .leftJoin(assessmentTemplates, eq(assessmentQuestions.templateId, assessmentTemplates.id))
         .where(and(
           eq(assessmentQuestions.categoryId, categoryId),
           eq(assessmentQuestions.isActive, 1)
         ))
         .orderBy(assessmentQuestions.displayOrder);
       
-      return questions.map(question => ({ ...question, createdAt: question.createdAt || '', isActive: question.isActive || 1 }));
+      return questions.map(question => ({ 
+        ...question, 
+        createdAt: question.createdAt || '', 
+        isActive: question.isActive || 1,
+        templateName: question.templateName || undefined
+      }));
     } catch (error) {
       logger.dbError('fetch questions by category', error as Error, { categoryId });
       throw error;

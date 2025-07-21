@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AssessmentCategoriesService } from '@/lib/services/assessment-categories';
-import { AssessmentQuestionsService } from '@/lib/services/assessment-questions';
 import { ServiceError } from '@/lib/types/service-interfaces';
 
 export async function GET(
@@ -9,17 +8,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const categoryId = parseInt(id);
-    
-    if (isNaN(categoryId)) {
-      return NextResponse.json(
-        { error: 'Invalid category ID' },
-        { status: 400 }
-      );
-    }
 
-    const category = await AssessmentCategoriesService.getCategoryById(categoryId);
-    
+    const category = await AssessmentCategoriesService.getCategoryById(parseInt(id));
     if (!category) {
       return NextResponse.json(
         { error: 'Category not found' },

@@ -51,7 +51,7 @@ export function ConfirmDialogProvider({ children }: { children: React.ReactNode 
     <ConfirmDialogContext.Provider value={{ showConfirm }}>
       {children}
       {isOpen && options && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-85 p-4">
           <Card className="w-full max-w-md">
             <CardHeader>
               <CardTitle className={`flex items-center gap-2 ${

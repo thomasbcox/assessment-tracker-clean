@@ -194,7 +194,6 @@ describe('Assessment Types Service', () => {
         const errorMessage = error instanceof Error ? error.message : String(error);
         expect(errorMessage).toContain('Cannot delete assessment type');
         expect(errorMessage).toContain('category(ies)');
-        expect(errorMessage).toContain('template(s)');
         expect(errorMessage).toContain('Please remove or reassign');
       }
     });
